@@ -1,30 +1,30 @@
-import { Heading } from "@modules/common/components/ui"
-
 import ItemsPreviewTemplate from "@modules/cart/templates/preview"
 import DiscountCode from "@modules/checkout/components/discount-code"
 import CartTotals from "@modules/common/components/cart-totals"
-import Divider from "@modules/common/components/divider"
 import { HttpTypes } from "@medusajs/types"
 
 const CheckoutSummary = ({ cart }: { cart: HttpTypes.StoreCart }) => {
+  const itemCount = cart.items?.reduce((sum, item) => sum + item.quantity, 0) ?? 0
+
   return (
-    <div className="sticky top-0 flex flex-col-reverse small:flex-col gap-y-8 py-8 small:py-0 ">
-      <div className="w-full bg-white flex flex-col">
-        <Divider className="my-6 small:hidden" />
-        <Heading
-          level="h2"
-          className="flex flex-row text-3xl-regular items-baseline"
-        >
-          In your Cart
-        </Heading>
-        <Divider className="my-6" />
-        <CartTotals totals={cart} />
+    <aside
+      aria-label="Order summary"
+      className="small:sticky small:top-8 small:self-start"
+    >
+      <div className="flex flex-col gap-5 rounded-large bg-surface p-5 small:p-6">
+        <h2 className="font-display text-xl font-semibold">
+          Order summary{" "}
+          <span className="text-base font-normal tabular-nums text-muted">
+            ({itemCount} {itemCount === 1 ? "item" : "items"})
+          </span>
+        </h2>
         <ItemsPreviewTemplate cart={cart} />
-        <div className="my-6">
-          <DiscountCode cart={cart} />
+        <div className="border-t border-line pt-5">
+          <CartTotals totals={cart} />
         </div>
+        <DiscountCode cart={cart} />
       </div>
-    </div>
+    </aside>
   )
 }
 

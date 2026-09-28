@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useActionState } from "react";
+import React, { useEffect, useActionState } from "react"
 
 import Input from "@modules/common/components/input"
 
@@ -47,20 +47,21 @@ const ProfileEmail: React.FC<MyInformationProps> = ({ customer }) => {
   return (
     <form action={formAction} className="w-full">
       <AccountInfo
-        label="Phone"
-        currentInfo={`${customer.phone}`}
+        label="Mobile number"
+        currentInfo={customer.phone || "Not added yet"}
         isSuccess={successState}
         isError={!!state.error}
         errorMessage={state.error || undefined}
         clearState={clearState}
         data-testid="account-phone-editor"
       >
-        <div className="grid grid-cols-1 gap-y-2">
+        <div className="grid grid-cols-1 gap-4">
           <Input
-            label="Phone"
+            label="Mobile number"
             name="phone"
-            type="phone"
-            autoComplete="phone"
+            type="tel"
+            inputMode="tel"
+            autoComplete="tel"
             required
             defaultValue={customer.phone ?? ""}
             data-testid="phone-input"

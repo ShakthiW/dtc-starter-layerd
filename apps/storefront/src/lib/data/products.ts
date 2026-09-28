@@ -1,10 +1,7 @@
 "use server"
 
 import { sdk } from "@lib/config"
-import { OptionValueIds } from "@lib/util/product-option-filters"
-import { sortProducts } from "@lib/util/sort-products"
 import { HttpTypes } from "@medusajs/types"
-import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
 import { getAuthHeaders, getCacheOptions } from "./cookies"
 import { getRegion, retrieveRegion } from "./regions"
 
@@ -90,62 +87,4 @@ export const listProducts = async ({
         queryParams,
       }
     })
-}
-
-/**
- * This will fetch 100 products to the Next.js cache and sort them based on the sortBy parameter.
- * It will then return the paginated products based on the page and limit parameters.
- */
-export const listProductsWithSort = async ({
-  page = 0,
-  queryParams,
-  sortBy = "created_at",
-  countryCode,
-  optionValueIds,
-}: {
-  page?: number
-  queryParams?: ProductListQueryParams
-  sortBy?: SortOptions
-  countryCode: string
-  optionValueIds?: OptionValueIds
-}): Promise<{
-  response: { products: HttpTypes.StoreProduct[]; count: number }
-  nextPage: number | null
-  queryParams?: ProductListQueryParams
-}> => {
-  const limit = queryParams?.limit || 12
-  const optionFilters = Array.from(
-    new Set((optionValueIds || []).filter(Boolean))
-  )
-
-  const {
-    response: { products },
-  } = await listProducts({
-    pageParam: 0,
-    queryParams: {
-      ...queryParams,
-      ...(optionFilters.length ? { option_value_id: optionFilters } : {}),
-      limit: 100,
-    },
-    countryCode,
-  })
-
-  const sortedProducts = sortProducts(products, sortBy)
-
-  const pageParam = (page - 1) * limit
-
-  const filteredCount = products.length
-
-  const nextPage = filteredCount > pageParam + limit ? pageParam + limit : null
-
-  const paginatedProducts = sortedProducts.slice(pageParam, pageParam + limit)
-
-  return {
-    response: {
-      products: paginatedProducts,
-      count: filteredCount,
-    },
-    nextPage,
-    queryParams,
-  }
 }

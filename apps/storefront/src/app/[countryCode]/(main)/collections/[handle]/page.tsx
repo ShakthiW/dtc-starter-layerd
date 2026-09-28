@@ -1,25 +1,17 @@
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
 
+import { listCategories } from "@lib/data/categories"
 import { getCollectionByHandle, listCollections } from "@lib/data/collections"
-import { listRegions } from "@lib/data/regions"
+import { getRegion, listRegions } from "@lib/data/regions"
+import { getListingNav } from "@lib/util/listing-nav"
 import { StoreCollection, StoreRegion } from "@medusajs/types"
-import CollectionTemplate from "@modules/collections/templates"
-import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
-import { parseOptionValueIds } from "@lib/util/product-option-filters"
+import { COLLECTION_ATTRIBUTE } from "@modules/store/components/store-refinements/attributes"
+import StoreTemplate from "@modules/store/templates"
 
 type Props = {
   params: Promise<{ handle: string; countryCode: string }>
-  searchParams: Promise<
-    Record<string, string | string[] | undefined> & {
-      page?: string
-      sortBy?: SortOptions
-      optionValueIds?: string | string[]
-    }
-  >
 }
-
-export const PRODUCT_LIMIT = 12
 
 export async function generateStaticParams() {
   const { collections } = await listCollections({
@@ -38,20 +30,14 @@ export async function generateStaticParams() {
         .filter(Boolean) as string[]
   )
 
-  const collectionHandles = collections.map(
-    (collection: StoreCollection) => collection.handle
-  )
-
-  const staticParams = countryCodes
+  return countryCodes
     ?.map((countryCode: string) =>
-      collectionHandles.map((handle: string | undefined) => ({
+      collections.map((collection: StoreCollection) => ({
         countryCode,
-        handle,
+        handle: collection.handle,
       }))
     )
     .flat()
-
-  return staticParams
 }
 
 export async function generateMetadata(props: Props): Promise<Metadata> {
@@ -62,35 +48,35 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
     notFound()
   }
 
-  const metadata = {
-    title: `${collection.title} | Medusa Store`,
-    description: `${collection.title} collection`,
-  } as Metadata
-
-  return metadata
+  return {
+    title: `${collection.title} collection | LAYERD`,
+    description: `The ${collection.title} collection, designed and 3D printed in Sri Lanka by LAYERD.`,
+  }
 }
 
 export default async function CollectionPage(props: Props) {
-  const searchParams = await props.searchParams
   const params = await props.params
-  const { sortBy, page } = searchParams
-  const optionValueIds = parseOptionValueIds(searchParams)
+  const [region, collection, categories] = await Promise.all([
+    getRegion(params.countryCode),
+    getCollectionByHandle(params.handle),
+    listCategories(),
+  ])
 
-  const collection = await getCollectionByHandle(params.handle).then(
-    (collection) => collection
-  )
-
-  if (!collection) {
+  if (!region || !collection) {
     notFound()
   }
 
+  const { chips } = getListingNav(categories)
+
   return (
-    <CollectionTemplate
-      collection={collection}
-      page={page}
-      sortBy={sortBy}
-      countryCode={params.countryCode}
-      optionValueIds={optionValueIds}
+    <StoreTemplate
+      key={collection.id}
+      currencyCode={region.currency_code}
+      title={collection.title}
+      breadcrumbs={[{ label: "Shop", href: "/store" }]}
+      chips={chips.map((chip) => ({ ...chip, isActive: false }))}
+      facetFilters={[[`${COLLECTION_ATTRIBUTE}:${collection.title}`]]}
+      showCollections={false}
     />
   )
 }

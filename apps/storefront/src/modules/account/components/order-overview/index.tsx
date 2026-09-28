@@ -1,43 +1,42 @@
-"use client"
-
-import { Button } from "@modules/common/components/ui"
-
-import OrderCard from "../order-card"
-import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import { ShoppingBag } from "@medusajs/icons"
 import { HttpTypes } from "@medusajs/types"
+
+import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import OrderCard from "../order-card"
 
 const OrderOverview = ({ orders }: { orders: HttpTypes.StoreOrder[] }) => {
   if (orders?.length) {
     return (
-      <div className="flex flex-col gap-y-8 w-full">
-        {orders.map((o) => (
-          <div
-            key={o.id}
-            className="border-b border-gray-200 pb-6 last:pb-0 last:border-none"
-          >
-            <OrderCard order={o} />
-          </div>
+      <ul className="flex flex-col gap-4">
+        {orders.map((order) => (
+          <li key={order.id}>
+            <OrderCard order={order} />
+          </li>
         ))}
-      </div>
+      </ul>
     )
   }
 
   return (
     <div
-      className="w-full flex flex-col items-center gap-y-4"
+      className="flex flex-col items-center gap-4 rounded-large bg-surface px-6 py-14 text-center"
       data-testid="no-orders-container"
     >
-      <h2 className="text-large-semi">Nothing to see here</h2>
-      <p className="text-base-regular">
-        You don&apos;t have any orders yet, let us change that {":)"}
+      <span className="flex h-12 w-12 items-center justify-center rounded-full bg-paper">
+        <ShoppingBag aria-hidden="true" />
+      </span>
+      <h2 className="font-display text-xl font-semibold">No orders yet</h2>
+      <p className="max-w-sm text-sm text-muted">
+        When you place an order, it shows up here so you can follow it from our
+        studio to your door.
       </p>
-      <div className="mt-4">
-        <LocalizedClientLink href="/" passHref>
-          <Button data-testid="continue-shopping-button">
-            Continue shopping
-          </Button>
-        </LocalizedClientLink>
-      </div>
+      <LocalizedClientLink
+        href="/store"
+        className="btn-primary"
+        data-testid="continue-shopping-button"
+      >
+        Start shopping
+      </LocalizedClientLink>
     </div>
   )
 }

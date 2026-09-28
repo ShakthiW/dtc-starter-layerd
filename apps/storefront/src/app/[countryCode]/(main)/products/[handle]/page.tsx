@@ -5,6 +5,11 @@ import { getRegion, listRegions } from "@lib/data/regions"
 import ProductTemplate from "@modules/products/templates"
 import { HttpTypes } from "@medusajs/types"
 
+// The listing defaults plus categories and collection, for the breadcrumb and
+// related products.
+const PRODUCT_FIELDS =
+  "*variants.calculated_price,+variants.inventory_quantity,*variants.images,*variants.options,+metadata,+tags,*categories,*collection"
+
 type Props = {
   params: Promise<{ countryCode: string; handle: string }>
   searchParams: Promise<{ v_id?: string }>
@@ -87,12 +92,16 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
     notFound()
   }
 
+  const description =
+    product.description?.replace(/\s+/g, " ").slice(0, 155) ||
+    `${product.title}, designed and 3D printed in Sri Lanka by LAYERD.`
+
   return {
-    title: `${product.title} | Medusa Store`,
-    description: `${product.title}`,
+    title: `${product.title} | LAYERD`,
+    description,
     openGraph: {
-      title: `${product.title} | Medusa Store`,
-      description: `${product.title}`,
+      title: `${product.title} | LAYERD`,
+      description,
       images: product.thumbnail ? [product.thumbnail] : [],
     },
   }
@@ -111,7 +120,7 @@ export default async function ProductPage(props: Props) {
 
   const pricedProduct = await listProducts({
     countryCode: params.countryCode,
-    queryParams: { handle: params.handle },
+    queryParams: { handle: params.handle, fields: PRODUCT_FIELDS },
   }).then(({ response }) => response.products[0])
 
   if (!pricedProduct) {

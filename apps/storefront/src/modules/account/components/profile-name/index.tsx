@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useActionState } from "react";
+import React, { useEffect, useActionState } from "react"
 
 import Input from "@modules/common/components/input"
 
@@ -28,7 +28,10 @@ const ProfileName: React.FC<MyInformationProps> = ({ customer }) => {
       await updateCustomer(customer)
       return { success: true, error: null }
     } catch (error) {
-      return { success: false, error: String(error) }
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      }
     }
   }
 
@@ -55,7 +58,7 @@ const ProfileName: React.FC<MyInformationProps> = ({ customer }) => {
         clearState={clearState}
         data-testid="account-name-editor"
       >
-        <div className="grid grid-cols-2 gap-x-4">
+        <div className="grid grid-cols-2 gap-4">
           <Input
             label="First name"
             name="first_name"

@@ -1,62 +1,60 @@
 import { HttpTypes } from "@medusajs/types"
-import { Text } from "@modules/common/components/ui"
 
 type OrderDetailsProps = {
   order: HttpTypes.StoreOrder
   showStatus?: boolean
 }
 
+const formatStatus = (str: string) => {
+  const formatted = str.split("_").join(" ")
+  return formatted.slice(0, 1).toUpperCase() + formatted.slice(1)
+}
+
 const OrderDetails = ({ order, showStatus }: OrderDetailsProps) => {
-  const formatStatus = (str: string) => {
-    const formatted = str.split("_").join(" ")
-
-    return formatted.slice(0, 1).toUpperCase() + formatted.slice(1)
-  }
-
   return (
-    <div>
-      <Text>
-        We have sent the order confirmation details to{" "}
-        <span
-          className="text-ui-fg-medium-plus font-semibold"
-          data-testid="order-email"
+    <dl className="grid grid-cols-2 gap-4 text-sm small:grid-cols-4">
+      <div>
+        <dt className="text-muted">Order number</dt>
+        <dd
+          className="font-medium tabular-nums text-ink"
+          data-testid="order-id"
         >
-          {order.email}
-        </span>
-        .
-      </Text>
-      <Text className="mt-2">
-        Order date:{" "}
-        <span data-testid="order-date">
-          {new Date(order.created_at).toDateString()}
-        </span>
-      </Text>
-      <Text className="mt-2 text-ui-fg-interactive">
-        Order number: <span data-testid="order-id">{order.display_id}</span>
-      </Text>
-
-      <div className="flex items-center text-compact-small gap-x-4 mt-4">
-        {showStatus && (
-          <>
-            <Text>
-              Order status:{" "}
-              <span className="text-ui-fg-subtle " data-testid="order-status">
-                {formatStatus(order.fulfillment_status)}
-              </span>
-            </Text>
-            <Text>
-              Payment status:{" "}
-              <span
-                className="text-ui-fg-subtle "
-                sata-testid="order-payment-status"
-              >
-                {formatStatus(order.payment_status)}
-              </span>
-            </Text>
-          </>
-        )}
+          #{order.display_id}
+        </dd>
       </div>
-    </div>
+      <div>
+        <dt className="text-muted">Date</dt>
+        <dd className="text-ink" data-testid="order-date">
+          {new Date(order.created_at).toLocaleDateString("en-LK", {
+            day: "numeric",
+            month: "long",
+            year: "numeric",
+          })}
+        </dd>
+      </div>
+      <div className="col-span-2">
+        <dt className="text-muted">Email</dt>
+        <dd className="truncate text-ink" data-testid="order-email">
+          {order.email}
+        </dd>
+      </div>
+      {showStatus && (
+        <>
+          <div>
+            <dt className="text-muted">Order status</dt>
+            <dd className="text-ink" data-testid="order-status">
+              {formatStatus(order.fulfillment_status)}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-muted">Payment status</dt>
+            <dd className="text-ink" data-testid="order-payment-status">
+              {formatStatus(order.payment_status)}
+            </dd>
+          </div>
+        </>
+      )}
+    </dl>
   )
 }
 

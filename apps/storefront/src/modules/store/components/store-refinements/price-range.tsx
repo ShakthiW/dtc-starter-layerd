@@ -5,19 +5,7 @@ import { useEffect, useState } from "react"
 import { useRange } from "react-instantsearch"
 
 import { indexedCurrency, priceAttribute } from "@lib/search-client"
-
-function formatAmount(amount: number, currency: string) {
-    try {
-      return new Intl.NumberFormat(undefined, {
-        style: "currency",
-        currency: currency.toUpperCase(),
-        maximumFractionDigits: 0,
-      }).format(amount)
-    } catch {
-      // An unrecognised currency code shouldn't take the sidebar down.
-      return `${Math.round(amount)} ${currency.toUpperCase()}`
-    }
-}
+import { convertToLocale } from "@lib/util/money"
 
 /**
  * Price filter over the region currency's `min_price_*` field, which is
@@ -28,8 +16,12 @@ const PriceRange = ({ currencyCode }: { currencyCode: string }) => {
   const { start, range, canRefine, refine } = useRange({
     attribute: priceAttribute("min_price", currencyCode),
   })
-  const currency = indexedCurrency(currencyCode)
-  const format = (amount: number) => formatAmount(amount, currency)
+  const format = (amount: number) =>
+    convertToLocale({
+      amount,
+      currency_code: indexedCurrency(currencyCode),
+      maximumFractionDigits: 0,
+    })
 
   const min = Math.floor(range.min ?? 0)
   const max = Math.ceil(range.max ?? 0)
@@ -52,16 +44,18 @@ const PriceRange = ({ currencyCode }: { currencyCode: string }) => {
   }
 
   return (
-    <div className="flex flex-col gap-y-4">
-      <span className="txt-compact-small-plus text-ui-fg-subtle">Price</span>
+    <fieldset className="border-t border-line pt-5">
+      <legend className="float-left mb-4 w-full text-sm font-medium text-ink">
+        Price
+      </legend>
 
-      <div className="flex flex-col gap-y-3 pr-6">
+      <div className="clear-both flex flex-col gap-y-3 px-2">
         <Slider.Root
-          className="relative flex h-5 w-full touch-none select-none items-center"
+          className="relative flex h-11 w-full touch-none select-none items-center"
           value={value}
           min={min}
           max={max}
-          step={1}
+          step={50}
           minStepsBetweenThumbs={0}
           onValueChange={setValue}
           // Only refine when the thumb is released, so dragging doesn't fire a
@@ -70,28 +64,24 @@ const PriceRange = ({ currencyCode }: { currencyCode: string }) => {
           aria-label="Price range"
           data-testid="price-range"
         >
-          <Slider.Track className="relative h-0.5 w-full grow rounded-full bg-ui-border-base">
-            <Slider.Range className="absolute h-full rounded-full bg-ui-fg-interactive" />
+          <Slider.Track className="relative h-0.5 w-full grow rounded-full bg-line">
+            <Slider.Range className="absolute h-full rounded-full bg-ink" />
           </Slider.Track>
           {value.map((_, index) => (
             <Slider.Thumb
               key={index}
-              className="block h-4 w-4 rounded-full border border-ui-border-interactive bg-ui-bg-base shadow-elevation-card-rest outline-none focus-visible:ring-2 focus-visible:ring-ui-fg-interactive"
+              className="block h-5 w-5 rounded-full border-2 border-ink bg-surface outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2"
               aria-label={index === 0 ? "Minimum price" : "Maximum price"}
             />
           ))}
         </Slider.Root>
 
-        <div className="flex items-center justify-between">
-          <span className="text-small-regular text-ui-fg-subtle">
-            {format(value[0])}
-          </span>
-          <span className="text-small-regular text-ui-fg-subtle">
-            {format(value[1])}
-          </span>
+        <div className="flex items-center justify-between text-sm tabular-nums text-muted">
+          <span>{format(value[0])}</span>
+          <span>{format(value[1])}</span>
         </div>
       </div>
-    </div>
+    </fieldset>
   )
 }
 

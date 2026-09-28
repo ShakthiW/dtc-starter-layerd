@@ -1,14 +1,14 @@
 "use client"
 
-import * as Accordion from "@radix-ui/react-accordion"
-import { ChevronDownMini } from "@medusajs/icons"
-import clsx from "clsx"
-import { useState } from "react"
+import { clx } from "@modules/common/components/ui"
 import { useRefinementList } from "react-instantsearch"
 
-import { OPTION_VALUES_ATTRIBUTE } from "./attributes"
+import { COLOR_SWATCHES, OPTION_VALUES_ATTRIBUTE } from "./attributes"
 
 const FACET_LIMIT = 200
+
+/** Options that describe a purchase, not the product (gift card amounts). */
+const HIDDEN_OPTION_GROUPS = ["Amount"]
 
 type OptionGroup = {
   title: string
@@ -50,97 +50,76 @@ function groupItems(
   return Array.from(groups.values())
 }
 
+/**
+ * One group per product option (Color, Finish, Style...), as toggle chips.
+ * Only options present in the current results appear, so a category page
+ * shows just the options its products have.
+ */
 const OptionRefinements = () => {
   const { items, refine } = useRefinementList({
     attribute: OPTION_VALUES_ATTRIBUTE,
     limit: FACET_LIMIT,
-    // Alphabetical keeps a size or colour list stable as counts move around.
+    // Alphabetical keeps a colour list stable as counts move around.
     sortBy: ["name:asc"],
     operator: "and",
   })
-  const [closedGroups, setClosedGroups] = useState<string[]>([])
 
-  const groups = groupItems(items)
+  const groups = groupItems(items).filter(
+    (group) => !HIDDEN_OPTION_GROUPS.includes(group.title)
+  )
 
   if (!groups.length) {
     return null
   }
 
   return (
-    <Accordion.Root
-      type="multiple"
-      value={groups
-        .map((group) => group.title)
-        .filter((title) => !closedGroups.includes(title))}
-      onValueChange={(openTitles) =>
-        setClosedGroups(
-          groups
-            .map((group) => group.title)
-            .filter((title) => !openTitles.includes(title))
-        )
-      }
-      className="flex flex-col gap-y-3 pr-6"
-    >
+    <>
       {groups.map((group) => {
-        const isOpen = !closedGroups.includes(group.title)
-        const selectedCount = group.values.filter(
-          (value) => value.isRefined
-        ).length
+        const isColor = /^colou?r$/i.test(group.title)
 
         return (
-          <Accordion.Item
-            key={group.title}
-            value={group.title}
-            className="overflow-hidden"
-          >
-            <Accordion.Header>
-              <Accordion.Trigger className="flex w-full items-center justify-between py-3 text-left">
-                <div className="flex items-center gap-2">
-                  <span className="txt-compact-small-plus text-ui-fg-base">
-                    {group.title}
-                  </span>
-                  <span className="txt-compact-small-plus text-ui-fg-muted">
-                    ({selectedCount})
-                  </span>
-                </div>
-                <span
-                  className={clsx(
-                    "flex h-7 w-7 items-center justify-center text-ui-fg-muted transition-transform duration-150",
-                    { "rotate-180": isOpen }
+          <fieldset key={group.title} className="border-t border-line pt-5">
+            <legend className="float-left mb-3 w-full text-sm font-medium text-ink">
+              {isColor ? "Colour" : group.title}
+            </legend>
+            <div className="clear-both flex flex-wrap gap-2">
+              {group.values.map((value) => (
+                <button
+                  key={value.value}
+                  type="button"
+                  onClick={() => refine(value.value)}
+                  aria-pressed={value.isRefined}
+                  className={clx(
+                    "flex min-h-[40px] items-center gap-x-2 rounded-full border px-3.5 text-sm transition-colors duration-150",
+                    value.isRefined
+                      ? "border-ink bg-ink text-white"
+                      : "border-line bg-surface text-ink hover:border-ink"
                   )}
+                  data-testid="option-refinement"
                 >
-                  <ChevronDownMini />
-                </span>
-              </Accordion.Trigger>
-            </Accordion.Header>
-            <Accordion.Content className="pb-4 pt-1">
-              <div className="flex flex-wrap gap-2">
-                {group.values.map((value) => (
-                  <button
-                    key={value.value}
-                    onClick={() => refine(value.value)}
-                    aria-pressed={value.isRefined}
-                    className={clsx(
-                      "border-ui-border-base border text-small-regular h-10 rounded-rounded px-3 flex items-center gap-x-1.5 transition-colors duration-150",
-                      {
-                        "border-ui-border-interactive text-ui-fg-base":
-                          value.isRefined,
-                        "text-ui-fg-muted hover:text-ui-fg-base":
-                          !value.isRefined,
-                      }
+                  {isColor && COLOR_SWATCHES[value.label] && (
+                    <span
+                      aria-hidden="true"
+                      className="h-3.5 w-3.5 rounded-full border border-line-strong/40"
+                      style={{ backgroundColor: COLOR_SWATCHES[value.label] }}
+                    />
+                  )}
+                  {value.label}
+                  <span
+                    className={clx(
+                      "tabular-nums",
+                      value.isRefined ? "text-white/70" : "text-muted"
                     )}
-                    data-testid="option-refinement"
                   >
-                    {value.label}
-                    <span className="text-ui-fg-muted">({value.count})</span>
-                  </button>
-                ))}
-              </div>
-            </Accordion.Content>
-          </Accordion.Item>
+                    {value.count}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </fieldset>
         )
       })}
-    </Accordion.Root>
+    </>
   )
 }
 

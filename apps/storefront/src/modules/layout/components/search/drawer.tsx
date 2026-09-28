@@ -1,7 +1,12 @@
 "use client"
 
-import { Dialog, Transition } from "@headlessui/react"
-import { XMark } from "@medusajs/icons"
+import {
+  Dialog,
+  DialogPanel,
+  DialogTitle,
+  Transition,
+  TransitionChild,
+} from "@headlessui/react"
 import React, { Fragment } from "react"
 
 type SearchDrawerProps = {
@@ -10,57 +15,44 @@ type SearchDrawerProps = {
   children: React.ReactNode
 }
 
+/**
+ * The search overlay: a panel that drops from the top under a scrim on
+ * desktop and fills the screen on mobile. Escape and the scrim close it.
+ */
 const SearchDrawer = ({ isOpen, close, children }: SearchDrawerProps) => {
   return (
-    <Transition appear show={isOpen} as={Fragment}>
+    <Transition show={isOpen} as={Fragment}>
       <Dialog as="div" className="relative z-[75]" onClose={close}>
-        <Transition.Child
+        <TransitionChild
           as={Fragment}
-          enter="ease-out duration-300"
+          enter="ease-out duration-200"
           enterFrom="opacity-0"
           enterTo="opacity-100"
-          leave="ease-in duration-200"
+          leave="ease-in duration-150"
           leaveFrom="opacity-100"
           leaveTo="opacity-0"
         >
-          <div className="fixed inset-0 bg-ui-bg-overlay backdrop-blur-sm" />
-        </Transition.Child>
+          <div className="fixed inset-0 bg-ink/40" aria-hidden="true" />
+        </TransitionChild>
 
         <div className="fixed inset-0 overflow-hidden">
-          <div className="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10">
-            <Transition.Child
-              as={Fragment}
-              enter="transform transition ease-in-out duration-300"
-              enterFrom="translate-x-full"
-              enterTo="translate-x-0"
-              leave="transform transition ease-in-out duration-200"
-              leaveFrom="translate-x-0"
-              leaveTo="translate-x-full"
+          <TransitionChild
+            as={Fragment}
+            enter="transform transition ease-out duration-200"
+            enterFrom="-translate-y-4 opacity-0"
+            enterTo="translate-y-0 opacity-100"
+            leave="transform transition ease-in duration-150"
+            leaveFrom="translate-y-0 opacity-100"
+            leaveTo="-translate-y-4 opacity-0"
+          >
+            <DialogPanel
+              className="mx-auto flex h-full w-full max-w-3xl flex-col bg-paper small:mt-6 small:h-auto small:max-h-[80vh] small:rounded-large small:shadow-xl"
+              data-testid="search-drawer"
             >
-              <Dialog.Panel
-                className="pointer-events-auto w-screen max-w-md"
-                data-testid="search-drawer"
-              >
-                <div className="flex h-full flex-col border-l border-ui-border-base bg-ui-bg-base shadow-elevation-modal">
-                  <div className="flex items-center justify-between border-b border-ui-border-base px-4 py-3">
-                    <Dialog.Title className="text-large-semi text-ui-fg-base">
-                      Search
-                    </Dialog.Title>
-                    <button
-                      type="button"
-                      onClick={close}
-                      aria-label="Close search"
-                      className="text-ui-fg-muted hover:text-ui-fg-base"
-                      data-testid="close-search-drawer"
-                    >
-                      <XMark />
-                    </button>
-                  </div>
-                  {children}
-                </div>
-              </Dialog.Panel>
-            </Transition.Child>
-          </div>
+              <DialogTitle className="sr-only">Search products</DialogTitle>
+              {children}
+            </DialogPanel>
+          </TransitionChild>
         </div>
       </Dialog>
     </Transition>

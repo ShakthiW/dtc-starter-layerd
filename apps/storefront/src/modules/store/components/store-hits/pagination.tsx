@@ -1,54 +1,70 @@
 "use client"
 
+import { ArrowLeftMini, ArrowRightMini } from "@medusajs/icons"
 import { usePagination } from "react-instantsearch"
 
 import { clx } from "@modules/common/components/ui"
 
 const SearchPagination = () => {
-  const { pages, currentRefinement, nbPages, refine } = usePagination({
-    padding: 2,
-  })
+  const { pages, currentRefinement, nbPages, isFirstPage, isLastPage, refine } =
+    usePagination({ padding: 2 })
 
   if (nbPages <= 1) {
     return null
   }
 
-  const renderPage = (page: number) => (
-    <button
-      key={page}
-      className={clx("txt-xlarge-plus text-ui-fg-muted", {
-        "text-ui-fg-base hover:text-ui-fg-subtle": page === currentRefinement,
-      })}
-      disabled={page === currentRefinement}
-      onClick={() => refine(page)}
-    >
-      {page + 1}
-    </button>
-  )
+  const goTo = (page: number) => {
+    refine(page)
+    window.scrollTo({ top: 0, behavior: "smooth" })
+  }
 
-  const renderEllipsis = (key: string) => (
-    <span
-      key={key}
-      className="txt-xlarge-plus text-ui-fg-muted items-center cursor-default"
-    >
-      ...
-    </span>
-  )
-
-  const lastPage = nbPages - 1
+  const stepButton =
+    "flex h-11 items-center gap-1 rounded-full px-4 text-sm text-ink transition-colors hover:bg-ink/5 disabled:pointer-events-none disabled:opacity-40"
 
   return (
-    <div className="flex justify-center w-full mt-12">
-      <div className="flex gap-3 items-end" data-testid="product-pagination">
-        {!pages.includes(0) && renderPage(0)}
-        {!pages.includes(0) && !pages.includes(1) && renderEllipsis("start")}
-        {pages.map(renderPage)}
-        {!pages.includes(lastPage) &&
-          !pages.includes(lastPage - 1) &&
-          renderEllipsis("end")}
-        {!pages.includes(lastPage) && renderPage(lastPage)}
-      </div>
-    </div>
+    <nav
+      aria-label="Pagination"
+      className="mt-14 flex items-center justify-center gap-1"
+      data-testid="product-pagination"
+    >
+      <button
+        type="button"
+        onClick={() => goTo(currentRefinement - 1)}
+        disabled={isFirstPage}
+        className={stepButton}
+      >
+        <ArrowLeftMini aria-hidden="true" />
+        <span className="hidden xsmall:inline">Previous</span>
+      </button>
+      {pages.map((page) => {
+        const isCurrent = page === currentRefinement
+
+        return (
+          <button
+            key={page}
+            type="button"
+            onClick={() => goTo(page)}
+            aria-current={isCurrent ? "page" : undefined}
+            aria-label={`Page ${page + 1}`}
+            className={clx(
+              "flex h-11 w-11 items-center justify-center rounded-full text-sm tabular-nums transition-colors",
+              isCurrent ? "bg-ink text-white" : "text-muted hover:bg-ink/5 hover:text-ink"
+            )}
+          >
+            {page + 1}
+          </button>
+        )
+      })}
+      <button
+        type="button"
+        onClick={() => goTo(currentRefinement + 1)}
+        disabled={isLastPage}
+        className={stepButton}
+      >
+        <span className="hidden xsmall:inline">Next</span>
+        <ArrowRightMini aria-hidden="true" />
+      </button>
+    </nav>
   )
 }
 

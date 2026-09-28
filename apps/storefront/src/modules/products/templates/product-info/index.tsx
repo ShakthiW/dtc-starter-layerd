@@ -1,38 +1,51 @@
+import { ChevronRightMini } from "@medusajs/icons"
 import { HttpTypes } from "@medusajs/types"
-import { Heading, Text } from "@modules/common/components/ui"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
 type ProductInfoProps = {
   product: HttpTypes.StoreProduct
 }
 
+/** Breadcrumb, collection and title at the top of the product panel. */
 const ProductInfo = ({ product }: ProductInfoProps) => {
-  return (
-    <div id="product-info">
-      <div className="flex flex-col gap-y-4 lg:max-w-[500px] mx-auto">
-        {product.collection && (
-          <LocalizedClientLink
-            href={`/collections/${product.collection.handle}`}
-            className="text-medium text-ui-fg-muted hover:text-ui-fg-subtle"
-          >
-            {product.collection.title}
-          </LocalizedClientLink>
-        )}
-        <Heading
-          level="h2"
-          className="text-3xl leading-10 text-ui-fg-base"
-          data-testid="product-title"
-        >
-          {product.title}
-        </Heading>
+  const category = product.categories?.[0]
 
-        <Text
-          className="text-medium text-ui-fg-subtle whitespace-pre-line"
-          data-testid="product-description"
+  return (
+    <div id="product-info" className="flex flex-col gap-3">
+      <nav aria-label="Breadcrumb">
+        <ol className="flex flex-wrap items-center gap-1 text-sm text-muted">
+          <li className="flex items-center gap-1">
+            <LocalizedClientLink href="/store" className="hover:text-ink hover:underline underline-offset-4">
+              Shop
+            </LocalizedClientLink>
+            <ChevronRightMini aria-hidden="true" />
+          </li>
+          {category && (
+            <li className="flex items-center gap-1">
+              <LocalizedClientLink
+                href={`/categories/${category.handle}`}
+                className="hover:text-ink hover:underline underline-offset-4"
+              >
+                {category.name}
+              </LocalizedClientLink>
+            </li>
+          )}
+        </ol>
+      </nav>
+      {product.collection && (
+        <LocalizedClientLink
+          href={`/collections/${product.collection.handle}`}
+          className="eyebrow w-fit hover:text-ink"
         >
-          {product.description}
-        </Text>
-      </div>
+          {product.collection.title} collection
+        </LocalizedClientLink>
+      )}
+      <h1
+        className="font-display text-3xl font-semibold leading-tight tracking-tight text-balance small:text-4xl"
+        data-testid="product-title"
+      >
+        {product.title}
+      </h1>
     </div>
   )
 }

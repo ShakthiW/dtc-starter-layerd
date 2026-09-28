@@ -23,6 +23,8 @@ const PRODUCT_GRAPH_FIELDS = [
   "tags.value",
   "options.title",
   "options.values.value",
+  "collection.title",
+  "images.url",
 ];
 
 type ProductRow = {
@@ -38,6 +40,8 @@ type ProductRow = {
   categories?: ({ name?: string | null } | null)[] | null;
   tags?: ({ value?: string | null } | null)[] | null;
   options?: ProductOptionRow[] | null;
+  collection?: { title?: string | null } | null;
+  images?: ({ url?: string | null } | null)[] | null;
 };
 
 const productFields = search.define({
@@ -53,6 +57,9 @@ const productFields = search.define({
   created_at: search.date().sortable().retrievable(),
   category: search.keyword().array().filterable().facetable().retrievable(),
   labels: search.keyword().array().filterable().facetable().retrievable(),
+  collection: search.keyword().filterable().facetable().retrievable(),
+  // Second product photo, shown when a listing card is hovered.
+  hover_image: search.keyword().retrievable(),
   option_values: search
     .keyword()
     .array()
@@ -77,6 +84,9 @@ function toDocument(
   const labels = (product.tags ?? [])
     .map((tag) => tag?.value?.trim())
     .filter((value): value is string => Boolean(value));
+  const hoverImage = (product.images ?? [])
+    .map((image) => image?.url)
+    .find((url) => url && url !== product.thumbnail);
   const salesChannelIds = (product.sales_channels ?? [])
     .map((salesChannel) => salesChannel?.id?.trim())
     .filter((id): id is string => Boolean(id));
@@ -92,6 +102,8 @@ function toDocument(
     created_at: product.created_at ?? null,
     category,
     labels,
+    collection: product.collection?.title?.trim() || null,
+    hover_image: hoverImage ?? null,
     option_values: toOptionValues(product.options),
     ...toProductPricing(pricing),
   };

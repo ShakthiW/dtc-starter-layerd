@@ -2,6 +2,50 @@
 @import "tailwindcss/components";
 @import "tailwindcss/utilities";
 
+@layer base {
+  /* LAYERD tokens (RGB channels). Contrast checked against WCAG AA:
+     ink on paper 16.4:1, muted on paper 7.1:1, accent-ink on paper 5.5:1,
+     white on accent 4.9:1, line-strong on surface >= 3:1 for form fields. */
+  :root {
+    --layerd-paper: 250 247 242;
+    --layerd-surface: 255 255 255;
+    --layerd-ink: 28 25 23;
+    --layerd-muted: 87 83 78;
+    --layerd-accent: 161 98 7;
+    --layerd-accent-ink: 138 90 11;
+    --layerd-sage: 230 236 227;
+    --layerd-blush: 245 230 223;
+    --layerd-line: 214 211 209;
+    --layerd-line-strong: 120 113 108;
+  }
+
+  body {
+    @apply bg-paper text-ink font-sans antialiased;
+  }
+
+  /* Keep the product page's sticky add-to-cart bar clear of the footer */
+  @media (max-width: 1023px) {
+    body:has([data-testid="mobile-actions"]) {
+      padding-bottom: 5rem;
+    }
+  }
+
+  :focus-visible {
+    @apply outline outline-2 outline-offset-2 outline-ink;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
 @layer utilities {
   /* Chrome, Safari and Opera */
   .no-scrollbar::-webkit-scrollbar {
@@ -51,7 +95,19 @@
 
 @layer components {
   .content-container {
-    @apply max-w-[1440px] w-full mx-auto px-6;
+    @apply max-w-[1280px] w-full mx-auto px-4 small:px-8;
+  }
+
+  .eyebrow {
+    @apply font-display text-xs font-medium uppercase tracking-[0.14em] text-muted;
+  }
+
+  .btn-primary {
+    @apply inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full bg-ink px-6 text-sm font-medium text-white transition-colors duration-200 hover:bg-ink/85;
+  }
+
+  .btn-secondary {
+    @apply inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full border border-ink px-6 text-sm font-medium text-ink transition-colors duration-200 hover:bg-ink hover:text-white;
   }
 
   .contrast-btn {

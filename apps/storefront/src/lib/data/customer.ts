@@ -25,6 +25,10 @@ export type CustomerAuthState =
   | { state: "success" }
   | null
 
+// Error objects stringify as "Error: <message>"; shoppers only need the message.
+const errorText = (error: unknown) =>
+  error instanceof Error ? error.message : String(error)
+
 // Requests a verification email for the given customer. The request must be
 // authenticated with a token tied to the auth identity (the token returned by
 // register or by a login that requires verification).
@@ -110,7 +114,7 @@ export async function signup(
       fetchError.statusText !== "Unauthorized" ||
       fetchError.message !== "Identity with email already exists"
     ) {
-      return { state: "error", error: String(error) }
+      return { state: "error", error: errorText(error) }
     }
   }
 
@@ -146,7 +150,7 @@ async function completeLogin(
   try {
     result = await sdk.auth.login("customer", "emailpass", { email, password })
   } catch (error) {
-    return { state: "error", error: String(error) }
+    return { state: "error", error: errorText(error) }
   }
 
   // A `location` is returned by third-party auth providers, which this flow
@@ -212,7 +216,7 @@ async function completeLogin(
         password,
       })) as string
     } catch (error) {
-      return { state: "error", error: String(error) }
+      return { state: "error", error: errorText(error) }
     }
 
     await removePendingCustomer()
@@ -226,7 +230,7 @@ async function completeLogin(
   try {
     await transferCart()
   } catch (error) {
-    return { state: "error", error: String(error) }
+    return { state: "error", error: errorText(error) }
   }
 
   return { state: "success" }
@@ -243,7 +247,7 @@ export async function confirmEmailVerification(
     await sdk.auth.verification.confirm({ code: token })
     return { success: true }
   } catch (error) {
-    return { success: false, error: String(error) }
+    return { success: false, error: errorText(error) }
   }
 }
 
@@ -312,7 +316,7 @@ export const addCustomerAddress = async (
       return { success: true, error: null }
     })
     .catch((err) => {
-      return { success: false, error: err.toString() }
+      return { success: false, error: errorText(err) }
     })
 }
 
@@ -331,7 +335,7 @@ export const deleteCustomerAddress = async (
       return { success: true, error: null }
     })
     .catch((err) => {
-      return { success: false, error: err.toString() }
+      return { success: false, error: errorText(err) }
     })
 }
 
@@ -376,6 +380,6 @@ export const updateCustomerAddress = async (
       return { success: true, error: null }
     })
     .catch((err) => {
-      return { success: false, error: err.toString() }
+      return { success: false, error: errorText(err) }
     })
 }

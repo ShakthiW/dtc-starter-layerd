@@ -8,10 +8,10 @@ const DEBOUNCE_MS = 250
 
 /**
  * Free-text search over the listing, refining the same InstantSearch state the
- * sidebar filters do. The input is held locally so typing stays responsive
- * while the query itself is debounced.
+ * filters do. The input is held locally so typing stays responsive while the
+ * query itself is debounced.
  */
-const StoreSearchBox = () => {
+const StoreSearchBox = ({ placeholder = "Search products" }: { placeholder?: string }) => {
   const timer = useRef<number | undefined>(undefined)
 
   const queryHook = useCallback(
@@ -40,8 +40,8 @@ const StoreSearchBox = () => {
   }
 
   return (
-    <div className="mb-6 flex items-center gap-x-3 border-b border-ui-border-base">
-      <MagnifyingGlass className="shrink-0 text-ui-fg-muted" />
+    <div className="flex h-11 w-full items-center gap-x-2 rounded-full border border-line-strong bg-surface px-4 focus-within:border-ink">
+      <MagnifyingGlass aria-hidden="true" className="shrink-0 text-muted" />
       <input
         type="search"
         value={inputValue}
@@ -49,9 +49,9 @@ const StoreSearchBox = () => {
           setInputValue(event.target.value)
           refine(event.target.value)
         }}
-        placeholder="Search products"
-        aria-label="Search products"
-        className="txt-medium w-full bg-transparent py-3 text-ui-fg-base outline-none placeholder:text-ui-fg-muted [&::-webkit-search-cancel-button]:hidden"
+        placeholder={placeholder}
+        aria-label={placeholder}
+        className="w-full bg-transparent text-base text-ink outline-none placeholder:text-muted small:text-sm [&::-webkit-search-cancel-button]:hidden"
         data-testid="store-search-input"
       />
       {inputValue && (
@@ -59,7 +59,7 @@ const StoreSearchBox = () => {
           type="button"
           onClick={clear}
           aria-label="Clear search"
-          className="shrink-0 text-ui-fg-muted hover:text-ui-fg-base"
+          className="-mr-2 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted hover:text-ink"
           data-testid="store-search-clear"
         >
           <XMarkMini />

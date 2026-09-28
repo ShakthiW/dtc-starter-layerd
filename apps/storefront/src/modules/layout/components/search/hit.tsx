@@ -5,51 +5,78 @@ import type { Hit as HitType } from "instantsearch.js"
 
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import PlaceholderImage from "@modules/common/icons/placeholder-image"
-import { Text } from "@modules/common/components/ui"
+import {
+  HitPricing,
+  getHitPrice,
+} from "@modules/store/components/store-hits/price"
 
-export type ProductHit = HitType<{
-  title: string | null
-  handle: string | null
-  thumbnail: string | null
-}>
+export type ProductHit = HitType<
+  {
+    title: string | null
+    handle: string | null
+    thumbnail: string | null
+  } & HitPricing
+>
 
 type SearchHitProps = {
   hit: ProductHit
+  currencyCode: string
   onNavigate?: () => void
 }
 
-const SearchHit = ({ hit, onNavigate }: SearchHitProps) => {
+const SearchHit = ({ hit, currencyCode, onNavigate }: SearchHitProps) => {
   if (!hit.handle) {
     return null
   }
+
+  const { price, originalPrice, isOnSale, isPriceRange } = getHitPrice(
+    hit,
+    currencyCode
+  )
 
   return (
     <li>
       <LocalizedClientLink
         href={`/products/${hit.handle}`}
         onClick={onNavigate}
-        className="flex items-center gap-x-4 px-4 py-3 hover:bg-ui-bg-base-hover"
+        className="flex items-center gap-x-4 rounded-rounded p-2 transition-colors hover:bg-surface focus-visible:bg-surface"
         data-testid="search-hit-link"
       >
-        <div className="relative h-16 w-14 shrink-0 overflow-hidden rounded-rounded bg-ui-bg-subtle">
+        <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-rounded bg-surface">
           {hit.thumbnail ? (
             <Image
               src={hit.thumbnail}
               alt=""
               fill
-              sizes="56px"
+              sizes="64px"
               className="object-cover object-center"
               draggable={false}
             />
           ) : (
-            <div className="flex h-full w-full items-center justify-center text-ui-fg-muted">
+            <div className="flex h-full w-full items-center justify-center text-muted">
               <PlaceholderImage size={20} />
             </div>
           )}
         </div>
-        <Text className="txt-medium text-ui-fg-base line-clamp-2">
-          {hit.title}
-        </Text>
+        <div className="min-w-0 flex-1">
+          <p className="line-clamp-2 text-sm font-medium text-ink">
+            {hit.title}
+          </p>
+          {price && (
+            <p className="mt-0.5 flex items-baseline gap-2 text-sm tabular-nums">
+              <span className={isOnSale ? "text-accent-ink" : "text-muted"}>
+                {isPriceRange && "From "}
+                {price}
+              </span>
+              {isOnSale && originalPrice && (
+                <span className="text-muted line-through">
+                  <span className="sr-only">Was </span>
+                  {originalPrice}
+                </span>
+              )}
+            </p>
+          )}
+        </div>
       </LocalizedClientLink>
     </li>
   )

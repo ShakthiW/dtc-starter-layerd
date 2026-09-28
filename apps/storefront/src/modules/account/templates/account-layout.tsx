@@ -1,7 +1,5 @@
 import React from "react"
 
-import UnderlineLink from "@modules/common/components/interactive-link"
-
 import AccountNav from "../components/account-nav"
 import { HttpTypes } from "@medusajs/types"
 
@@ -15,26 +13,34 @@ const AccountLayout: React.FC<AccountLayoutProps> = ({
   children,
 }) => {
   return (
-    <div className="flex-1 small:py-12" data-testid="account-page">
-      <div className="flex-1 content-container h-full max-w-5xl mx-auto bg-white flex flex-col">
-        <div className="grid grid-cols-1  small:grid-cols-[240px_1fr] py-12">
-          <div>{customer && <AccountNav customer={customer} />}</div>
-          <div className="flex-1">{children}</div>
-        </div>
-        <div className="flex flex-col small:flex-row items-end justify-between small:border-t border-gray-200 py-12 gap-8">
-          <div>
-            <h3 className="text-xl-semi mb-4">Got questions?</h3>
-            <span className="txt-medium">
-              You can find frequently asked questions and answers on our
-              customer service page.
-            </span>
+    <div
+      className="content-container py-8 small:py-14"
+      data-testid="account-page"
+    >
+      <div className={customer ? "" : "mx-auto max-w-5xl"}>
+        {customer ? (
+          <div className="grid grid-cols-1 gap-8 small:grid-cols-[240px_1fr] small:gap-12">
+            <div>
+              <AccountNav customer={customer} />
+            </div>
+            <div className="min-w-0 flex-1">{children}</div>
           </div>
-          <div>
-            <UnderlineLink href="/customer-service">
-              Customer Service
-            </UnderlineLink>
-          </div>
-        </div>
+        ) : (
+          children
+        )}
+
+        <p className="mt-12 border-t border-line pt-8 text-sm text-muted">
+          Need help with your account or an order?{" "}
+          <a
+            href="https://ig.me/m/bylayerd"
+            target="_blank"
+            rel="noreferrer"
+            className="font-medium text-ink underline underline-offset-4"
+          >
+            Message us on Instagram
+          </a>
+          .
+        </p>
       </div>
     </div>
   )

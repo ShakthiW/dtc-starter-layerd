@@ -5,11 +5,7 @@ import { useClearRefinements, useCurrentRefinements } from "react-instantsearch"
 
 import { indexedCurrency, priceAttribute } from "@lib/search-client"
 import { convertToLocale } from "@lib/util/money"
-import {
-  CATEGORY_ATTRIBUTE,
-  LABELS_ATTRIBUTE,
-  OPTION_VALUES_ATTRIBUTE,
-} from "./attributes"
+import { OPTION_VALUES_ATTRIBUTE } from "./attributes"
 
 type Refinement = ReturnType<
   typeof useCurrentRefinements
@@ -17,8 +13,8 @@ type Refinement = ReturnType<
 
 /**
  * What a single refinement reads as on its chip. The raw label is the facet
- * value, which is the option's `Size:M` form for options and a bare `true` for
- * the on-sale toggle — neither says what it filters on out of context.
+ * value, which is the option's `Color:Black` form for options and a bare
+ * `true` for the on-sale toggle — neither says what it filters on.
  */
 function refinementLabel(refinement: Refinement, currencyCode: string) {
   const { attribute, label, value, operator } = refinement
@@ -26,11 +22,7 @@ function refinementLabel(refinement: Refinement, currencyCode: string) {
   if (attribute === OPTION_VALUES_ATTRIBUTE) {
     const separator = String(value).indexOf(":")
 
-    return separator < 1
-      ? label
-      : `${String(value).slice(0, separator)}: ${String(value).slice(
-          separator + 1
-        )}`
+    return separator < 1 ? label : String(value).slice(separator + 1)
   }
 
   if (attribute === priceAttribute("on_sale", currencyCode)) {
@@ -49,22 +41,10 @@ function refinementLabel(refinement: Refinement, currencyCode: string) {
       : `From ${amount}`
   }
 
-  if (attribute === CATEGORY_ATTRIBUTE) {
-    return `Category: ${label}`
-  }
-
-  if (attribute === LABELS_ATTRIBUTE) {
-    return `Label: ${label}`
-  }
-
   return label
 }
 
-/**
- * Every active refinement as a chip that drops it, above the filters that set
- * them. The free-text query is excluded by the connector's own defaults, so
- * only what the sidebar controls shows up here.
- */
+/** Every active filter as a removable chip, plus "Clear all". */
 const CurrentRefinements = ({ currencyCode }: { currencyCode: string }) => {
   const { items, refine } = useCurrentRefinements()
   const { canRefine: canClearAll, refine: clearAll } = useClearRefinements()
@@ -77,14 +57,15 @@ const CurrentRefinements = ({ currencyCode }: { currencyCode: string }) => {
 
   return (
     <div className="flex flex-col gap-y-3" data-testid="current-refinements">
-      <div className="flex items-center justify-between gap-x-2 pr-6">
-        <span className="txt-compact-small-plus text-ui-fg-subtle">
-          Applied filters
+      <div className="flex items-center justify-between gap-x-2">
+        <span className="text-sm font-medium text-ink">
+          Applied ({refinements.length})
         </span>
         {canClearAll && (
           <button
+            type="button"
             onClick={clearAll}
-            className="txt-compact-small-plus text-ui-fg-interactive hover:text-ui-fg-interactive-hover"
+            className="min-h-[40px] text-sm text-ink underline underline-offset-4"
             data-testid="clear-refinements"
           >
             Clear all
@@ -92,7 +73,7 @@ const CurrentRefinements = ({ currencyCode }: { currencyCode: string }) => {
         )}
       </div>
 
-      <ul className="flex flex-wrap gap-2 pr-6">
+      <ul className="flex flex-wrap gap-2">
         {refinements.map((refinement) => {
           const label = refinementLabel(refinement, currencyCode)
 
@@ -103,13 +84,14 @@ const CurrentRefinements = ({ currencyCode }: { currencyCode: string }) => {
               }`}
             >
               <button
+                type="button"
                 onClick={() => refine(refinement)}
                 aria-label={`Remove filter ${label}`}
-                className="border-ui-border-interactive text-ui-fg-base border text-small-regular h-8 rounded-rounded px-3 flex items-center gap-x-1.5 transition-colors duration-150 hover:bg-ui-bg-base-hover"
+                className="flex min-h-[36px] items-center gap-x-1.5 rounded-full bg-ink px-3 text-sm text-white transition-colors hover:bg-ink/85"
                 data-testid="remove-refinement"
               >
                 {label}
-                <XMarkMini className="text-ui-fg-muted" />
+                <XMarkMini aria-hidden="true" />
               </button>
             </li>
           )

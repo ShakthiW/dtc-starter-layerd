@@ -82,14 +82,14 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         ref={ref}
         disabled={disabled || isLoading}
         className={clsx(
-          "inline-flex gap-2 items-center justify-center rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
-          variant === "primary" && "bg-black text-white hover:bg-gray-800",
+          "inline-flex gap-2 items-center justify-center rounded-full font-medium transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:pointer-events-none disabled:opacity-50",
+          variant === "primary" && "bg-ink text-white hover:bg-ink/85",
           variant === "secondary" &&
-            "bg-white text-black border border-gray-200 hover:bg-gray-50",
-          variant === "transparent" && "bg-transparent hover:bg-gray-100",
-          size === "small" && "h-8 px-3 text-sm",
-          size === "medium" && "h-10 px-4",
-          size === "large" && "h-12 px-6 text-lg",
+            "bg-surface text-ink border border-ink hover:bg-ink hover:text-white",
+          variant === "transparent" && "bg-transparent text-ink hover:bg-ink/5",
+          size === "small" && "min-h-[36px] px-4 text-sm",
+          size === "medium" && "min-h-[44px] px-6 text-sm",
+          size === "large" && "min-h-[48px] px-8 text-base",
           className
         )}
         {...props}
@@ -221,7 +221,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         <input
           ref={ref}
           className={clsx(
-            "flex h-10 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+            "flex h-11 w-full rounded-rounded border border-line-strong bg-surface px-4 text-base text-ink placeholder:text-muted focus:border-ink focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 small:text-sm",
             className
           )}
           {...props}

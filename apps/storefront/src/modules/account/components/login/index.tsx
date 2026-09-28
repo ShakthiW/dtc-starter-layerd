@@ -13,17 +13,15 @@ const Login = ({ setCurrentView }: Props) => {
   const [message, formAction] = useActionState(login, null)
 
   return (
-    <div
-      className="max-w-sm w-full flex flex-col items-center"
-      data-testid="login-page"
-    >
-      <h1 className="text-large-semi uppercase mb-6">Welcome back</h1>
-      <p className="text-center text-base-regular text-ui-fg-base mb-8">
-        Sign in to access an enhanced shopping experience.
+    <div className="flex w-full flex-col" data-testid="login-page">
+      <h2 className="font-display text-2xl font-semibold">Welcome back</h2>
+      <p className="mb-6 mt-1 text-sm text-muted">
+        Sign in with the email you used for your account.
       </p>
       {message?.state === "verification_required" && (
         <div
-          className="w-full mb-6 text-center text-base-regular text-ui-fg-base bg-ui-bg-subtle border border-ui-border-base rounded-rounded p-4"
+          role="status"
+          className="mb-6 rounded-rounded bg-paper p-4 text-sm text-ink"
           data-testid="login-verification-message"
         >
           We sent a verification link to <strong>{message.email}</strong>.
@@ -31,7 +29,7 @@ const Login = ({ setCurrentView }: Props) => {
         </div>
       )}
       <form className="w-full" action={formAction}>
-        <div className="flex flex-col w-full gap-y-2">
+        <div className="flex w-full flex-col gap-4">
           <Input
             label="Email"
             name="email"
@@ -54,21 +52,24 @@ const Login = ({ setCurrentView }: Props) => {
           error={message?.state === "error" ? message.error : null}
           data-testid="login-error-message"
         />
-        <SubmitButton data-testid="sign-in-button" className="w-full mt-6">
+        <SubmitButton
+          size="large"
+          data-testid="sign-in-button"
+          className="mt-6 w-full"
+        >
           Sign in
         </SubmitButton>
       </form>
-      <span className="text-center text-ui-fg-base text-small-regular mt-6">
-        Not a member?{" "}
+      <p className="mt-6 text-center text-sm text-muted">
+        New to LAYERD?{" "}
         <button
+          type="button"
           onClick={() => setCurrentView(LOGIN_VIEW.REGISTER)}
-          className="underline"
-          data-testid="register-button"
+          className="font-medium text-ink underline underline-offset-4"
         >
-          Join us
+          Create an account
         </button>
-        .
-      </span>
+      </p>
     </div>
   )
 }

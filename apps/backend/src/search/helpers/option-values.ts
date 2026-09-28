@@ -14,7 +14,9 @@ export function toOptionValues(
   const flattened = (options ?? []).flatMap((option) => {
     const title = option?.title?.trim();
 
-    if (!title) {
+    // "Default" is the placeholder option of a product without variants; it
+    // would only show up as a meaningless filter.
+    if (!title || title === "Default") {
       return [];
     }
 

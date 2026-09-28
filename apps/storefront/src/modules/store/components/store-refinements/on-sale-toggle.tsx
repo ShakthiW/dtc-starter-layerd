@@ -6,8 +6,7 @@ import { priceAttribute } from "@lib/search-client"
 
 /**
  * Narrows to products whose calculated price is below their original in the
- * region's currency. Hides itself when nothing is discounted, which is the
- * case until a price list applies to some product.
+ * region's currency. Hides itself when nothing is discounted.
  */
 const OnSaleToggle = ({ currencyCode }: { currencyCode: string }) => {
   const { value, refine, canRefine } = useToggleRefinement({
@@ -20,23 +19,21 @@ const OnSaleToggle = ({ currencyCode }: { currencyCode: string }) => {
   }
 
   return (
-    <label className="flex cursor-pointer items-center gap-x-2">
-      <input
-        type="checkbox"
-        checked={value.isRefined}
-        onChange={() => refine(value)}
-        className="shrink-0 accent-ui-fg-interactive"
-        data-testid="on-sale-toggle"
-      />
-      <span className="txt-compact-small-plus text-ui-fg-subtle">
-        On sale only
-      </span>
-      {typeof value.count === "number" && (
-        <span className="text-small-regular text-ui-fg-muted">
-          ({value.count})
-        </span>
-      )}
-    </label>
+    <div className="border-t border-line pt-5">
+      <label className="flex min-h-[40px] cursor-pointer items-center gap-x-3 text-sm">
+        <input
+          type="checkbox"
+          checked={value.isRefined}
+          onChange={() => refine(value)}
+          className="h-4 w-4 shrink-0 accent-ink"
+          data-testid="on-sale-toggle"
+        />
+        <span className="font-medium text-ink">On sale only</span>
+        {typeof value.count === "number" && (
+          <span className="ml-auto tabular-nums text-muted">{value.count}</span>
+        )}
+      </label>
+    </div>
   )
 }
 

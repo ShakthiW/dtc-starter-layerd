@@ -12,10 +12,16 @@ type CartTotalsProps = {
     item_subtotal?: number | null
     shipping_subtotal?: number | null
     discount_subtotal?: number | null
+    shipping_methods?: unknown[] | null
   }
+  /**
+   * Delivery price to show before a delivery method is chosen (the cart
+   * page). Added to the total so shoppers see what they'll actually pay.
+   */
+  estimatedShipping?: number | null
 }
 
-const CartTotals: React.FC<CartTotalsProps> = ({ totals }) => {
+const CartTotals: React.FC<CartTotalsProps> = ({ totals, estimatedShipping }) => {
   const {
     currency_code,
     total,
@@ -25,57 +31,63 @@ const CartTotals: React.FC<CartTotalsProps> = ({ totals }) => {
     discount_subtotal,
   } = totals
 
+  const format = (amount: number) => convertToLocale({ amount, currency_code })
+  const hasMethod = (totals.shipping_methods?.length ?? 0) > 0
+  const isEstimate = typeof estimatedShipping === "number" && !hasMethod
+  const shipping = isEstimate ? estimatedShipping : shipping_subtotal ?? 0
+  const grandTotal = (total ?? 0) + (isEstimate ? estimatedShipping : 0)
+  const shippingLabel =
+    !isEstimate && !hasMethod
+      ? "Calculated at the next step"
+      : shipping === 0
+      ? "Free"
+      : format(shipping)
+
   return (
-    <div>
-      <div className="flex flex-col gap-y-2 txt-medium text-ui-fg-subtle ">
+    <dl className="flex flex-col gap-y-3 text-sm">
+      <div className="flex items-center justify-between">
+        <dt className="text-muted">Subtotal</dt>
+        <dd className="tabular-nums text-ink" data-testid="cart-subtotal" data-value={item_subtotal || 0}>
+          {format(item_subtotal ?? 0)}
+        </dd>
+      </div>
+      {!!discount_subtotal && (
         <div className="flex items-center justify-between">
-          <span>Subtotal (excl. shipping and taxes)</span>
-          <span data-testid="cart-subtotal" data-value={item_subtotal || 0}>
-            {convertToLocale({ amount: item_subtotal ?? 0, currency_code })}
-          </span>
+          <dt className="text-muted">Discount</dt>
+          <dd
+            className="tabular-nums text-accent-ink"
+            data-testid="cart-discount"
+            data-value={discount_subtotal || 0}
+          >
+            − {format(discount_subtotal)}
+          </dd>
         </div>
-        <div className="flex items-center justify-between">
-          <span>Shipping</span>
-          <span data-testid="cart-shipping" data-value={shipping_subtotal || 0}>
-            {convertToLocale({ amount: shipping_subtotal ?? 0, currency_code })}
-          </span>
-        </div>
-        {!!discount_subtotal && (
-          <div className="flex items-center justify-between">
-            <span>Discount</span>
-            <span
-              className="text-ui-fg-interactive"
-              data-testid="cart-discount"
-              data-value={discount_subtotal || 0}
-            >
-              -{" "}
-              {convertToLocale({
-                amount: discount_subtotal ?? 0,
-                currency_code,
-              })}
-            </span>
-          </div>
-        )}
+      )}
+      <div className="flex items-center justify-between">
+        <dt className="text-muted">Delivery</dt>
+        <dd className="tabular-nums text-ink" data-testid="cart-shipping" data-value={shipping || 0}>
+          {shippingLabel}
+        </dd>
+      </div>
+      {!!tax_total && (
         <div className="flex justify-between">
-          <span className="flex gap-x-1 items-center ">Taxes</span>
-          <span data-testid="cart-taxes" data-value={tax_total || 0}>
-            {convertToLocale({ amount: tax_total ?? 0, currency_code })}
-          </span>
+          <dt className="text-muted">Taxes</dt>
+          <dd className="tabular-nums text-ink" data-testid="cart-taxes" data-value={tax_total}>
+            {format(tax_total)}
+          </dd>
         </div>
-      </div>
-      <div className="h-px w-full border-b border-gray-200 my-4" />
-      <div className="flex items-center justify-between text-ui-fg-base mb-2 txt-medium ">
-        <span>Total</span>
-        <span
-          className="txt-xlarge-plus"
+      )}
+      <div className="mt-1 flex items-center justify-between border-t border-line pt-4">
+        <dt className="font-medium text-ink">Total</dt>
+        <dd
+          className="font-display text-xl font-semibold tabular-nums text-ink"
           data-testid="cart-total"
-          data-value={total || 0}
+          data-value={grandTotal}
         >
-          {convertToLocale({ amount: total ?? 0, currency_code })}
-        </span>
+          {format(grandTotal)}
+        </dd>
       </div>
-      <div className="h-px w-full border-b border-gray-200 mt-4" />
-    </div>
+    </dl>
   )
 }
 

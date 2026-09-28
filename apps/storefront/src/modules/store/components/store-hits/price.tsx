@@ -1,58 +1,34 @@
-"use client"
-
 import { indexedCurrency, priceAttribute } from "@lib/search-client"
 import { convertToLocale } from "@lib/util/money"
-import { Text, clx } from "@modules/common/components/ui"
 
-/** The per-currency price fields a hit may carry, e.g. `min_price_eur`. */
+/** The per-currency price fields a hit may carry, e.g. `min_price_lkr`. */
 export type HitPricing = Record<string, unknown>
-
-type HitPriceProps = {
-  hit: HitPricing
-  currencyCode: string
-}
 
 const amount = (value: unknown) => (typeof value === "number" ? value : null)
 
-const HitPrice = ({ hit, currencyCode }: HitPriceProps) => {
+/**
+ * A hit's price fields as the product card displays them: the cheapest
+ * variant's price, its pre-sale price, and whether other variants cost more.
+ */
+export function getHitPrice(hit: HitPricing, currencyCode: string) {
   const currency_code = indexedCurrency(currencyCode)
-  const min_price = amount(hit[priceAttribute("min_price", currencyCode)])
-  const max_price = amount(hit[priceAttribute("max_price", currencyCode)])
-  const original_price = amount(
+  const minPrice = amount(hit[priceAttribute("min_price", currencyCode)])
+  const maxPrice = amount(hit[priceAttribute("max_price", currencyCode)])
+  const originalPrice = amount(
     hit[priceAttribute("original_price", currencyCode)]
   )
-  const on_sale = hit[priceAttribute("on_sale", currencyCode)] === true
 
-  if (min_price === null) {
-    return null
+  if (minPrice === null) {
+    return {}
   }
 
   const format = (value: number) =>
     convertToLocale({ amount: value, currency_code })
 
-  const max = max_price ?? min_price
-  const isRange = max > min_price
-
-  return (
-    <div className="flex items-center gap-x-2" data-testid="product-price">
-      {!isRange && on_sale && original_price !== null && (
-        <Text
-          className="line-through text-ui-fg-muted"
-          data-testid="original-price"
-        >
-          {format(original_price)}
-        </Text>
-      )}
-      <Text
-        className={clx("text-ui-fg-muted", {
-          "text-ui-tag-red-text": on_sale,
-        })}
-        data-testid="price"
-      >
-        {isRange ? `${format(min_price)} - ${format(max)}` : format(min_price)}
-      </Text>
-    </div>
-  )
+  return {
+    price: format(minPrice),
+    originalPrice: originalPrice !== null ? format(originalPrice) : null,
+    isOnSale: hit[priceAttribute("on_sale", currencyCode)] === true,
+    isPriceRange: (maxPrice ?? minPrice) > minPrice,
+  }
 }
-
-export default HitPrice

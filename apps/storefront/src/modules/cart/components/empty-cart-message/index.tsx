@@ -1,23 +1,40 @@
-import { Heading, Text } from "@modules/common/components/ui"
-
-import InteractiveLink from "@modules/common/components/interactive-link"
+import { ShoppingBag } from "@medusajs/icons"
+import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import { NAV_ITEMS } from "@modules/layout/nav-items"
 
 const EmptyCartMessage = () => {
+  const categories = NAV_ITEMS.filter((item) => item.href.startsWith("/categories"))
+
   return (
-    <div className="py-48 px-2 flex flex-col justify-center items-start" data-testid="empty-cart-message">
-      <Heading
-        level="h1"
-        className="flex flex-row text-3xl-regular gap-x-2 items-baseline"
-      >
-        Cart
-      </Heading>
-      <Text className="text-base-regular mt-4 mb-6 max-w-[32rem]">
-        You don&apos;t have anything in your cart. Let&apos;s change that, use
-        the link below to start browsing our products.
-      </Text>
-      <div>
-        <InteractiveLink href="/store">Explore products</InteractiveLink>
-      </div>
+    <div
+      className="mx-auto flex max-w-lg flex-col items-center gap-5 py-20 text-center small:py-28"
+      data-testid="empty-cart-message"
+    >
+      <span className="flex h-14 w-14 items-center justify-center rounded-full bg-surface">
+        <ShoppingBag aria-hidden="true" />
+      </span>
+      <h1 className="font-display text-3xl font-semibold tracking-tight">
+        Your cart is empty
+      </h1>
+      <p className="text-muted">
+        Find a lamp for your desk, a vase for your shelf or a small gift for
+        someone. Everything is printed to order in Sri Lanka.
+      </p>
+      <LocalizedClientLink href="/store" className="btn-primary">
+        Start shopping
+      </LocalizedClientLink>
+      <ul className="mt-2 flex flex-wrap justify-center gap-2">
+        {categories.map((item) => (
+          <li key={item.href}>
+            <LocalizedClientLink
+              href={item.href}
+              className="flex min-h-[40px] items-center rounded-full border border-line bg-surface px-4 text-sm hover:border-ink"
+            >
+              {item.label}
+            </LocalizedClientLink>
+          </li>
+        ))}
+      </ul>
     </div>
   )
 }

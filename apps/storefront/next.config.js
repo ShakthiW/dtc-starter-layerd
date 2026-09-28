@@ -39,6 +39,11 @@ const nextConfig = {
         protocol: "https",
         hostname: "*.s3.amazonaws.com",
       },
+      // Placeholder product photos from the current layerd.lk store
+      {
+        protocol: "https",
+        hostname: "cdn.shopify.com",
+      },
       ...(S3_HOSTNAME && S3_PATHNAME
         ? [
             {

@@ -2,7 +2,6 @@ import React, { Suspense } from "react"
 
 import ImageGallery from "@modules/products/components/image-gallery"
 import ProductActions from "@modules/products/components/product-actions"
-import ProductOnboardingCta from "@modules/products/components/product-onboarding-cta"
 import ProductTabs from "@modules/products/components/product-tabs"
 import RelatedProducts from "@modules/products/components/related-products"
 import ProductInfo from "@modules/products/templates/product-info"
@@ -32,35 +31,30 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
   return (
     <>
       <div
-        className="content-container  flex flex-col small:flex-row small:items-start py-6 relative"
+        className="content-container grid gap-8 pb-8 pt-4 small:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] small:gap-14 small:pt-10"
         data-testid="product-container"
       >
-        <div className="flex flex-col small:sticky small:top-48 small:py-0 small:max-w-[300px] w-full py-8 gap-y-6">
+        <ImageGallery images={images} title={product.title} />
+
+        {/* Spans both rows on desktop so it can stay in view beside the
+            gallery and the details below it. */}
+        <div className="flex flex-col gap-8 small:sticky small:top-32 small:col-start-2 small:row-span-2 small:row-start-1 small:self-start">
           <ProductInfo product={product} />
-          <ProductTabs product={product} />
-        </div>
-        <div className="block w-full relative">
-          <ImageGallery images={images} />
-        </div>
-        <div className="flex flex-col small:sticky small:top-48 small:py-0 small:max-w-[300px] w-full py-8 gap-y-12">
-          <ProductOnboardingCta />
           <Suspense
             fallback={
-              <ProductActions
-                disabled={true}
-                product={product}
-                region={region}
-              />
+              <ProductActions disabled={true} product={product} region={region} />
             }
           >
             <ProductActionsWrapper id={product.id} region={region} />
           </Suspense>
         </div>
+
+        <div className="small:col-start-1">
+          <ProductTabs product={product} />
+        </div>
       </div>
-      <div
-        className="content-container my-16 small:my-32"
-        data-testid="related-products-container"
-      >
+
+      <div className="content-container py-16 small:py-24" data-testid="related-products-container">
         <Suspense fallback={<SkeletonRelatedProducts />}>
           <RelatedProducts product={product} countryCode={countryCode} />
         </Suspense>

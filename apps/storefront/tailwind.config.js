@@ -20,6 +20,21 @@ module.exports = {
         padding: "padding-top padding-right padding-bottom padding-left",
       },
       colors: {
+        // LAYERD semantic tokens, defined as RGB channels in globals.css
+        paper: "rgb(var(--layerd-paper) / <alpha-value>)",
+        surface: "rgb(var(--layerd-surface) / <alpha-value>)",
+        ink: "rgb(var(--layerd-ink) / <alpha-value>)",
+        muted: "rgb(var(--layerd-muted) / <alpha-value>)",
+        accent: {
+          DEFAULT: "rgb(var(--layerd-accent) / <alpha-value>)",
+          ink: "rgb(var(--layerd-accent-ink) / <alpha-value>)",
+        },
+        sage: "rgb(var(--layerd-sage) / <alpha-value>)",
+        blush: "rgb(var(--layerd-blush) / <alpha-value>)",
+        line: {
+          DEFAULT: "rgb(var(--layerd-line) / <alpha-value>)",
+          strong: "rgb(var(--layerd-line-strong) / <alpha-value>)",
+        },
         grey: {
           0: "#FFFFFF",
           5: "#F9FAFB",
@@ -58,7 +73,9 @@ module.exports = {
         "3xl": "2rem",
       },
       fontFamily: {
+        display: ["var(--font-display)", "system-ui", "sans-serif"],
         sans: [
+          "var(--font-sans)",
           "Inter",
           "-apple-system",
           "BlinkMacSystemFont",

@@ -1,60 +1,55 @@
 import { Suspense } from "react"
 
-import { listLocales } from "@lib/data/locales"
-import { getLocale } from "@lib/data/locale-actions"
-import { listRegions } from "@lib/data/regions"
-import { StoreRegion } from "@medusajs/types"
+import { ShoppingBag, User } from "@medusajs/icons"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import CartButton from "@modules/layout/components/cart-button"
+import NavLinks from "@modules/layout/components/nav-links"
 import Search from "@modules/layout/components/search"
 import SideMenu from "@modules/layout/components/side-menu"
 
-export default async function Nav() {
-  const [regions, locales, currentLocale] = await Promise.all([
-    listRegions().then((regions: StoreRegion[]) => regions),
-    listLocales(),
-    getLocale(),
-  ])
+const iconButton =
+  "flex h-11 w-11 items-center justify-center rounded-full text-ink hover:bg-ink/5 transition-colors duration-200"
 
+export default function Nav() {
   return (
-    <div className="sticky top-0 inset-x-0 z-50 group">
-      <header className="relative h-16 mx-auto border-b duration-200 bg-white border-ui-border-base">
-        <nav className="content-container txt-xsmall-plus text-ui-fg-subtle flex items-center justify-between w-full h-full text-small-regular">
-          <div className="flex-1 basis-0 h-full flex items-center">
-            <div className="h-full">
-              <SideMenu regions={regions} locales={locales} currentLocale={currentLocale} />
-            </div>
-          </div>
-
-          <div className="flex items-center h-full">
+    <div className="sticky top-0 inset-x-0 z-50">
+      <p className="bg-ink px-4 py-2 text-center text-xs text-white">
+        Free delivery over Rs 10,000
+        <span className="hidden xsmall:inline"> · Cash on delivery island-wide</span>
+      </p>
+      <header className="border-b border-line bg-paper/95 backdrop-blur supports-[backdrop-filter]:bg-paper/80">
+        <nav className="content-container flex h-16 items-center justify-between gap-x-4">
+          <div className="flex items-center gap-x-2 small:gap-x-8">
+            <SideMenu />
             <LocalizedClientLink
               href="/"
-              className="txt-compact-xlarge-plus hover:text-ui-fg-base uppercase"
+              className="font-display text-xl font-semibold tracking-[0.2em] text-ink"
               data-testid="nav-store-link"
             >
-              Medusa Store
+              LAYERD
             </LocalizedClientLink>
+            <NavLinks />
           </div>
 
-          <div className="flex items-center gap-x-6 h-full flex-1 basis-0 justify-end">
+          <div className="flex items-center">
             <Search />
-            <div className="hidden small:flex items-center gap-x-6 h-full">
-              <LocalizedClientLink
-                className="hover:text-ui-fg-base"
-                href="/account"
-                data-testid="nav-account-link"
-              >
-                Account
-              </LocalizedClientLink>
-            </div>
+            <LocalizedClientLink
+              className={`${iconButton} hidden small:flex`}
+              href="/account"
+              aria-label="Account"
+              data-testid="nav-account-link"
+            >
+              <User />
+            </LocalizedClientLink>
             <Suspense
               fallback={
                 <LocalizedClientLink
-                  className="hover:text-ui-fg-base flex gap-2"
+                  className={iconButton}
                   href="/cart"
+                  aria-label="Cart"
                   data-testid="nav-cart-link"
                 >
-                  Cart (0)
+                  <ShoppingBag />
                 </LocalizedClientLink>
               }
             >

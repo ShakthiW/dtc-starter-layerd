@@ -1,22 +1,20 @@
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
 
-import { getCategoryByHandle, listCategories } from "@lib/data/categories"
-import { listRegions } from "@lib/data/regions"
+import { listCategories } from "@lib/data/categories"
+import { getRegion, listRegions } from "@lib/data/regions"
+import { categoryFacetFilters, getListingNav } from "@lib/util/listing-nav"
 import { HttpTypes, StoreRegion } from "@medusajs/types"
-import CategoryTemplate from "@modules/categories/templates"
-import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
-import { parseOptionValueIds } from "@lib/util/product-option-filters"
+import StoreTemplate from "@modules/store/templates"
 
 type Props = {
   params: Promise<{ category: string[]; countryCode: string }>
-  searchParams: Promise<
-    Record<string, string | string[] | undefined> & {
-      sortBy?: SortOptions
-      page?: string
-      optionValueIds?: string | string[]
-    }
-  >
+}
+
+const findCategory = async (handle: string[]) => {
+  const categories = await listCategories()
+  const current = categories.find((c) => c.handle === handle.join("/"))
+  return { categories, current }
 }
 
 export async function generateStaticParams() {
@@ -30,62 +28,59 @@ export async function generateStaticParams() {
     regions?.map((r) => r.countries?.map((c) => c.iso_2)).flat()
   )
 
-  const categoryHandles = product_categories.map(
-    (category: HttpTypes.StoreProductCategory) => category.handle
-  )
-
-  const staticParams = countryCodes
+  return countryCodes
     ?.map((countryCode: string | undefined) =>
-      categoryHandles.map((handle: string) => ({
+      product_categories.map((category: HttpTypes.StoreProductCategory) => ({
         countryCode,
-        category: [handle],
+        category: [category.handle],
       }))
     )
     .flat()
-
-  return staticParams
 }
 
 export async function generateMetadata(props: Props): Promise<Metadata> {
   const params = await props.params
-  try {
-    const productCategory = await getCategoryByHandle(params.category)
+  const { current } = await findCategory(params.category)
 
-    const title = productCategory.name + " | Medusa Store"
-
-    const description = productCategory.description ?? `${title} category.`
-
-    return {
-      title: `${title} | Medusa Store`,
-      description,
-      alternates: {
-        canonical: `${params.category.join("/")}`,
-      },
-    }
-  } catch {
+  if (!current) {
     notFound()
+  }
+
+  return {
+    title: `${current.name} | LAYERD`,
+    description:
+      current.description ||
+      `${current.name}, designed and 3D printed in Sri Lanka by LAYERD.`,
+    alternates: {
+      canonical: `${params.category.join("/")}`,
+    },
   }
 }
 
 export default async function CategoryPage(props: Props) {
-  const searchParams = await props.searchParams
   const params = await props.params
-  const { sortBy, page } = searchParams
-  const optionValueIds = parseOptionValueIds(searchParams)
+  const [region, { categories, current }] = await Promise.all([
+    getRegion(params.countryCode),
+    findCategory(params.category),
+  ])
 
-  const productCategory = await getCategoryByHandle(params.category)
-
-  if (!productCategory) {
+  if (!region || !current) {
     notFound()
   }
 
+  const { chips, subChips, breadcrumbs } = getListingNav(categories, current)
+
   return (
-    <CategoryTemplate
-      category={productCategory}
-      sortBy={sortBy}
-      page={page}
-      countryCode={params.countryCode}
-      optionValueIds={optionValueIds}
+    <StoreTemplate
+      // Remount per category so InstantSearch starts from this page's filters
+      key={current.id}
+      currencyCode={region.currency_code}
+      title={current.name}
+      description={current.description}
+      breadcrumbs={breadcrumbs}
+      chips={chips}
+      subChips={subChips}
+      facetFilters={categoryFacetFilters(current)}
     />
   )
 }

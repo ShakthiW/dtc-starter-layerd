@@ -42,18 +42,19 @@ const NativeSelect = forwardRef<HTMLSelectElement, NativeSelectProps>(
           onFocus={() => innerRef.current?.focus()}
           onBlur={() => innerRef.current?.blur()}
           className={clx(
-            "relative flex items-center text-base-regular border border-ui-border-base bg-ui-bg-subtle rounded-md hover:bg-ui-bg-field-hover",
+            "relative flex h-12 items-center rounded-rounded border border-line-strong bg-surface text-base text-ink focus-within:border-ink small:text-sm",
             className,
             {
-              "text-ui-fg-muted": isPlaceholder,
+              "text-muted": isPlaceholder,
             }
           )}
         >
           <select
             ref={innerRef}
             defaultValue={defaultValue}
+            aria-label={props["aria-label"] ?? placeholder}
             {...props}
-            className="appearance-none flex-1 bg-transparent border-none px-4 py-2.5 transition-colors duration-150 outline-none "
+            className="h-full flex-1 appearance-none border-none bg-transparent px-4 outline-none"
           >
             <option disabled value="">
               {placeholder}

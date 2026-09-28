@@ -8,6 +8,9 @@ type RelatedProductsProps = {
   countryCode: string
 }
 
+const LIMIT = 4
+
+/** Other pieces from the same category, falling back to the same collection. */
 export default async function RelatedProducts({
   product,
   countryCode,
@@ -18,52 +21,42 @@ export default async function RelatedProducts({
     return null
   }
 
-  // edit this function to define your related products logic
-  const queryParams: HttpTypes.StoreProductListParams = {}
-  if (region?.id) {
-    queryParams.region_id = region.id
+  const categoryIds = (product.categories ?? []).map((c) => c.id)
+  const queryParams: HttpTypes.StoreProductListParams = {
+    region_id: region.id,
+    limit: LIMIT + 1,
+    ...(categoryIds.length
+      ? { category_id: categoryIds }
+      : product.collection_id
+      ? { collection_id: [product.collection_id] }
+      : {}),
   }
-  if (product.collection_id) {
-    queryParams.collection_id = [product.collection_id]
-  }
-  if (product.tags) {
-    queryParams.tag_id = product.tags
-      .map((t) => t.id)
-      .filter(Boolean) as string[]
-  }
-  queryParams.is_giftcard = false
 
-  const products = await listProducts({
-    queryParams,
-    countryCode,
-  }).then(({ response }) => {
-    return response.products.filter(
-      (responseProduct) => responseProduct.id !== product.id
-    )
-  })
+  const products = await listProducts({ queryParams, countryCode }).then(
+    ({ response }) =>
+      response.products.filter((p) => p.id !== product.id).slice(0, LIMIT)
+  )
 
   if (!products.length) {
     return null
   }
 
   return (
-    <div className="product-page-constraint">
-      <div className="flex flex-col items-center text-center mb-16">
-        <span className="text-base-regular text-gray-600 mb-6">
-          Related products
-        </span>
-        <p className="text-2xl-regular text-ui-fg-base max-w-lg">
-          You might also want to check out these products.
-        </p>
-      </div>
-
-      <ul className="grid grid-cols-2 small:grid-cols-3 medium:grid-cols-4 gap-x-6 gap-y-8">
-        {products.map((product) => (
-          <li key={product.id}>
-            <Product region={region} product={product} />
+    <section aria-labelledby="related-heading">
+      <p className="eyebrow">Keep browsing</p>
+      <h2
+        id="related-heading"
+        className="mt-2 mb-8 font-display text-3xl font-semibold tracking-tight"
+      >
+        You may also like
+      </h2>
+      <ul className="grid grid-cols-2 gap-x-4 gap-y-10 small:grid-cols-4 small:gap-x-6">
+        {products.map((related) => (
+          <li key={related.id}>
+            <Product region={region} product={related} />
           </li>
         ))}
       </ul>
-    </div>
+    </section>
   )
 }

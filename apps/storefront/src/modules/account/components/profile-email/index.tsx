@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useActionState } from "react";
+import React, { useEffect, useActionState } from "react"
 
 import Input from "@modules/common/components/input"
 
@@ -24,7 +24,10 @@ const ProfileEmail: React.FC<MyInformationProps> = ({ customer }) => {
       // email: formData.get("email") as string
       return { success: true, error: null }
     } catch (error) {
-      return { success: false, error: String(error) }
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      }
     }
   }
 
@@ -52,7 +55,7 @@ const ProfileEmail: React.FC<MyInformationProps> = ({ customer }) => {
         clearState={clearState}
         data-testid="account-email-editor"
       >
-        <div className="grid grid-cols-1 gap-y-2">
+        <div className="grid grid-cols-1 gap-4">
           <Input
             label="Email"
             name="email"

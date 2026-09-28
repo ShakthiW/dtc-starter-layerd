@@ -33,9 +33,9 @@ const PaymentContainer: React.FC<PaymentContainerProps> = ({
       value={paymentProviderId}
       disabled={disabled}
       className={clx(
-        "flex flex-col gap-y-2 text-small-regular cursor-pointer py-4 border rounded-rounded px-8 mb-2 hover:shadow-borders-interactive-with-active",
+        "flex flex-col gap-y-2 text-small-regular cursor-pointer py-4 min-h-[56px] border border-line-strong/40 rounded-rounded bg-paper px-5 mb-2 transition-colors hover:border-ink",
         {
-          "border-ui-border-interactive":
+          "border-ink ring-1 ring-ink":
             selectedPaymentOptionId === paymentProviderId,
         }
       )}
@@ -50,7 +50,7 @@ const PaymentContainer: React.FC<PaymentContainerProps> = ({
             <PaymentTest className="hidden small:block" />
           )}
         </div>
-        <span className="justify-self-end text-ui-fg-base">
+        <span className="justify-self-end text-ink">
           {paymentInfoMap[paymentProviderId]?.icon}
         </span>
       </div>
@@ -87,7 +87,7 @@ export const StripePaymentContainer = ({
       {selectedPaymentOptionId === paymentProviderId &&
         (stripeReady ? (
           <div className="my-4 transition-all duration-150 ease-in-out">
-            <Text className="txt-medium-plus text-ui-fg-base mb-1">
+            <Text className="txt-medium-plus text-ink mb-1">
               Enter your payment details:
             </Text>
             <PaymentElement

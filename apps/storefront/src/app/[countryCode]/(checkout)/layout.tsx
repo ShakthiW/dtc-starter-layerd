@@ -1,6 +1,5 @@
+import { ArrowLeftMini, LockClosedSolid } from "@medusajs/icons"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
-import ChevronDown from "@modules/common/icons/chevron-down"
-import MedusaCTA from "@modules/layout/components/medusa-cta"
 
 export default function CheckoutLayout({
   children,
@@ -8,35 +7,33 @@ export default function CheckoutLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className="w-full bg-white relative small:min-h-screen">
-      <div className="h-16 bg-white border-b ">
-        <nav className="flex h-full items-center content-container justify-between">
+    <div className="relative w-full small:min-h-screen">
+      <header className="border-b border-line bg-paper">
+        <nav className="content-container flex h-16 items-center justify-between">
           <LocalizedClientLink
             href="/cart"
-            className="text-small-semi text-ui-fg-base flex items-center gap-x-2 uppercase flex-1 basis-0"
+            className="flex min-h-[44px] flex-1 basis-0 items-center gap-x-2 text-sm text-muted hover:text-ink"
             data-testid="back-to-cart-link"
           >
-            <ChevronDown className="rotate-90" size={16} />
-            <span className="mt-px hidden small:block txt-compact-plus text-ui-fg-subtle hover:text-ui-fg-base ">
-              Back to shopping cart
-            </span>
-            <span className="mt-px block small:hidden txt-compact-plus text-ui-fg-subtle hover:text-ui-fg-base">
-              Back
-            </span>
+            <ArrowLeftMini aria-hidden="true" />
+            <span className="hidden small:inline">Back to cart</span>
+            <span className="small:hidden">Cart</span>
           </LocalizedClientLink>
           <LocalizedClientLink
             href="/"
-            className="txt-compact-xlarge-plus text-ui-fg-subtle hover:text-ui-fg-base uppercase"
+            className="font-display text-xl font-semibold tracking-[0.2em] text-ink"
             data-testid="store-link"
           >
-            Medusa Store
+            LAYERD
           </LocalizedClientLink>
-          <div className="flex-1 basis-0" />
+          <p className="flex flex-1 basis-0 items-center justify-end gap-x-2 text-sm text-muted">
+            <LockClosedSolid aria-hidden="true" />
+            <span className="hidden small:inline">Checkout</span>
+          </p>
         </nav>
-      </div>
-      <div className="relative" data-testid="checkout-container">{children}</div>
-      <div className="py-4 w-full flex items-center justify-center">
-        <MedusaCTA />
+      </header>
+      <div className="relative" data-testid="checkout-container">
+        {children}
       </div>
     </div>
   )

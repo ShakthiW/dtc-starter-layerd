@@ -1,168 +1,138 @@
-import { Container } from "@modules/common/components/ui"
-
-import ChevronDown from "@modules/common/icons/chevron-down"
-import LocalizedClientLink from "@modules/common/components/localized-client-link"
-import { convertToLocale } from "@lib/util/money"
+import { ChevronRightMini, MapPin, ShoppingBag, User } from "@medusajs/icons"
 import { HttpTypes } from "@medusajs/types"
+
+import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import OrderOverview from "../order-overview"
 
 type OverviewProps = {
   customer: HttpTypes.StoreCustomer | null
   orders: HttpTypes.StoreOrder[] | null
 }
 
+const RECENT_ORDERS = 3
+
 const Overview = ({ customer, orders }: OverviewProps) => {
+  const addressCount = customer?.addresses?.length ?? 0
+  const orderCount = orders?.length ?? 0
+  const missing = getMissingProfileDetails(customer)
+
+  const tiles = [
+    {
+      href: "/account/orders",
+      icon: ShoppingBag,
+      label: "Orders",
+      value: `${orderCount} ${orderCount === 1 ? "order" : "orders"}`,
+      testId: "orders-count",
+    },
+    {
+      href: "/account/addresses",
+      icon: MapPin,
+      label: "Addresses",
+      value: `${addressCount} saved`,
+      testId: "addresses-count",
+    },
+    {
+      href: "/account/profile",
+      icon: User,
+      label: "Profile",
+      value: missing.length ? `Add your ${missing.join(" and ")}` : "All set",
+      testId: "customer-profile-completion",
+    },
+  ]
+
   return (
-    <div data-testid="overview-page-wrapper">
-      <div className="hidden small:block">
-        <div className="text-xl-semi flex justify-between items-center mb-4">
-          <span data-testid="welcome-message" data-value={customer?.first_name}>
-            Hello {customer?.first_name}
+    <div className="flex flex-col gap-10" data-testid="overview-page-wrapper">
+      <header className="flex flex-col gap-1">
+        <h1
+          className="font-display text-3xl font-semibold tracking-tight"
+          data-testid="welcome-message"
+          data-value={customer?.first_name}
+        >
+          Hello{customer?.first_name ? `, ${customer.first_name}` : ""}
+        </h1>
+        <p className="text-muted">
+          Signed in as{" "}
+          <span
+            className="text-ink"
+            data-testid="customer-email"
+            data-value={customer?.email}
+          >
+            {customer?.email}
           </span>
-          <span className="text-small-regular text-ui-fg-base">
-            Signed in as:{" "}
-            <span
-              className="font-semibold"
-              data-testid="customer-email"
-              data-value={customer?.email}
+        </p>
+      </header>
+
+      <ul className="grid gap-3 small:grid-cols-3 small:gap-4">
+        {tiles.map(({ href, icon: Icon, label, value, testId }) => (
+          <li key={href}>
+            <LocalizedClientLink
+              href={href}
+              className="group flex h-full items-center gap-4 rounded-large bg-surface p-4 transition-colors hover:ring-1 hover:ring-ink small:flex-col small:items-stretch small:gap-3 small:p-5"
             >
-              {customer?.email}
-            </span>
-          </span>
-        </div>
-        <div className="flex flex-col py-8 border-t border-gray-200">
-          <div className="flex flex-col gap-y-4 h-full col-span-1 row-span-2 flex-1">
-            <div className="flex items-start gap-x-16 mb-6">
-              <div className="flex flex-col gap-y-4">
-                <h3 className="text-large-semi">Profile</h3>
-                <div className="flex items-end gap-x-2">
-                  <span
-                    className="text-3xl-semi leading-none"
-                    data-testid="customer-profile-completion"
-                    data-value={getProfileCompletion(customer)}
-                  >
-                    {getProfileCompletion(customer)}%
-                  </span>
-                  <span className="uppercase text-base-regular text-ui-fg-subtle">
-                    Completed
-                  </span>
-                </div>
-              </div>
+              <span className="flex items-center justify-between">
+                <Icon aria-hidden="true" className="text-accent-ink" />
+                <ChevronRightMini
+                  aria-hidden="true"
+                  className="hidden text-muted group-hover:text-ink small:block"
+                />
+              </span>
+              <span className="flex min-w-0 flex-1 flex-col gap-0.5 small:gap-3">
+                <span className="text-sm text-muted">{label}</span>
+                <span className="font-medium text-ink" data-testid={testId}>
+                  {value}
+                </span>
+              </span>
+              <ChevronRightMini
+                aria-hidden="true"
+                className="text-muted small:hidden"
+              />
+            </LocalizedClientLink>
+          </li>
+        ))}
+      </ul>
 
-              <div className="flex flex-col gap-y-4">
-                <h3 className="text-large-semi">Addresses</h3>
-                <div className="flex items-end gap-x-2">
-                  <span
-                    className="text-3xl-semi leading-none"
-                    data-testid="addresses-count"
-                    data-value={customer?.addresses?.length || 0}
-                  >
-                    {customer?.addresses?.length || 0}
-                  </span>
-                  <span className="uppercase text-base-regular text-ui-fg-subtle">
-                    Saved
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-y-4">
-              <div className="flex items-center gap-x-2">
-                <h3 className="text-large-semi">Recent orders</h3>
-              </div>
-              <ul
-                className="flex flex-col gap-y-4"
-                data-testid="orders-wrapper"
-              >
-                {orders && orders.length > 0 ? (
-                  orders.slice(0, 5).map((order) => {
-                    return (
-                      <li
-                        key={order.id}
-                        data-testid="order-wrapper"
-                        data-value={order.id}
-                      >
-                        <LocalizedClientLink
-                          href={`/account/orders/details/${order.id}`}
-                        >
-                          <Container className="bg-gray-50 flex justify-between items-center p-4">
-                            <div className="grid grid-cols-3 grid-rows-2 text-small-regular gap-x-4 flex-1">
-                              <span className="font-semibold">Date placed</span>
-                              <span className="font-semibold">
-                                Order number
-                              </span>
-                              <span className="font-semibold">
-                                Total amount
-                              </span>
-                              <span data-testid="order-created-date">
-                                {new Date(order.created_at).toDateString()}
-                              </span>
-                              <span
-                                data-testid="order-id"
-                                data-value={order.display_id}
-                              >
-                                #{order.display_id}
-                              </span>
-                              <span data-testid="order-amount">
-                                {convertToLocale({
-                                  amount: order.total,
-                                  currency_code: order.currency_code,
-                                })}
-                              </span>
-                            </div>
-                            <button
-                              className="flex items-center justify-between"
-                              data-testid="open-order-button"
-                            >
-                              <span className="sr-only">
-                                Go to order #{order.display_id}
-                              </span>
-                              <ChevronDown className="-rotate-90" />
-                            </button>
-                          </Container>
-                        </LocalizedClientLink>
-                      </li>
-                    )
-                  })
-                ) : (
-                  <span data-testid="no-orders-message">No recent orders</span>
-                )}
-              </ul>
-            </div>
-          </div>
+      <section
+        aria-labelledby="recent-orders-heading"
+        className="flex flex-col gap-4"
+      >
+        <div className="flex items-end justify-between">
+          <h2
+            id="recent-orders-heading"
+            className="font-display text-xl font-semibold"
+          >
+            Recent orders
+          </h2>
+          {orderCount > RECENT_ORDERS && (
+            <LocalizedClientLink
+              href="/account/orders"
+              className="text-sm font-medium text-ink underline underline-offset-4"
+            >
+              See all orders
+            </LocalizedClientLink>
+          )}
         </div>
-      </div>
+        <div data-testid="orders-wrapper">
+          <OrderOverview orders={(orders ?? []).slice(0, RECENT_ORDERS)} />
+        </div>
+      </section>
     </div>
   )
 }
 
-const getProfileCompletion = (customer: HttpTypes.StoreCustomer | null) => {
-  let count = 0
-
+/** What the profile still lacks, in plain words, for the Profile tile. */
+const getMissingProfileDetails = (customer: HttpTypes.StoreCustomer | null) => {
   if (!customer) {
-    return 0
+    return []
   }
 
-  if (customer.email) {
-    count++
+  const missing: string[] = []
+  if (!customer.phone) {
+    missing.push("mobile number")
   }
-
-  if (customer.first_name && customer.last_name) {
-    count++
+  if (!customer.addresses?.some((address) => address.is_default_billing)) {
+    missing.push("billing address")
   }
-
-  if (customer.phone) {
-    count++
-  }
-
-  const billingAddress = customer.addresses?.find(
-    (addr) => addr.is_default_billing
-  )
-
-  if (billingAddress) {
-    count++
-  }
-
-  return (count / 4) * 100
+  return missing
 }
 
 export default Overview

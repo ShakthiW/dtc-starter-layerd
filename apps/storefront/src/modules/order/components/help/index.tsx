@@ -1,24 +1,22 @@
-import { Heading } from "@modules/common/components/ui"
-import LocalizedClientLink from "@modules/common/components/localized-client-link"
-import React from "react"
-
 const Help = () => {
   return (
-    <div className="mt-6">
-      <Heading className="text-base-semi">Need help?</Heading>
-      <div className="text-base-regular my-2">
-        <ul className="gap-y-2 flex flex-col">
-          <li>
-            <LocalizedClientLink href="/contact">Contact</LocalizedClientLink>
-          </li>
-          <li>
-            <LocalizedClientLink href="/contact">
-              Returns & Exchanges
-            </LocalizedClientLink>
-          </li>
-        </ul>
-      </div>
-    </div>
+    <section aria-labelledby="help-heading" className="text-sm">
+      <h2 id="help-heading" className="mb-2 font-display text-lg font-semibold">
+        Need help?
+      </h2>
+      <p className="text-muted">
+        <a
+          href="https://ig.me/m/bylayerd"
+          target="_blank"
+          rel="noreferrer"
+          className="font-medium text-ink underline underline-offset-4"
+        >
+          Message us on Instagram
+        </a>{" "}
+        with your order number. If a piece arrives with a defect, we&apos;ll
+        replace it or refund you in full.
+      </p>
+    </section>
   )
 }
 
