@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "name": "research",
+  "owner": "teslasoft-de",
+  "repo": "claude-skills-marketplace",
+  "path": "plugins/ux/skills/research",
+  "branch": "master",
+  "sha": "bd0da19c507e8b779c29918d89c00ebfe1e720af",
+  "source": "manual"
+}
