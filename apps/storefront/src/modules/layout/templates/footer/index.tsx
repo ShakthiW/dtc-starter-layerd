@@ -66,7 +66,7 @@ export default async function Footer() {
             <ul className="mt-4 flex flex-col">
               <li>
                 <LocalizedClientLink href="/#custom" className={linkClass}>
-                  Custom orders
+                  Print your model
                 </LocalizedClientLink>
               </li>
               <li>

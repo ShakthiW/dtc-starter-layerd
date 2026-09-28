@@ -279,14 +279,14 @@ const SearchPanel = ({ onNavigate }: { onNavigate: () => void }) => {
             </p>
             <p className="max-w-sm text-sm text-muted">
               Try a simpler word like &ldquo;lamp&rdquo; or &ldquo;vase&rdquo;,
-              or ask us about a custom print.
+              or send us your own 3D model to print.
             </p>
             <LocalizedClientLink
               href="/#custom"
               onClick={onNavigate}
               className="btn-secondary"
             >
-              Custom orders
+              Print your model
             </LocalizedClientLink>
           </div>
         )}
