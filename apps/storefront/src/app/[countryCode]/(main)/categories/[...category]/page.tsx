@@ -2,10 +2,14 @@ import { Metadata } from "next"
 import { notFound } from "next/navigation"
 
 import { listCategories } from "@lib/data/categories"
-import { getRegion, listRegions } from "@lib/data/regions"
+import { getRegion } from "@lib/data/regions"
 import { categoryFacetFilters, getListingNav } from "@lib/util/listing-nav"
-import { HttpTypes, StoreRegion } from "@medusajs/types"
 import StoreTemplate from "@modules/store/templates"
+
+// Rendered per request: prices are per region and the data layer reads
+// cookies, which a prebuilt page can't do. Medusa responses stay cached by
+// the fetch cache, so this stays fast.
+export const dynamic = "force-dynamic"
 
 type Props = {
   params: Promise<{ category: string[]; countryCode: string }>
@@ -15,32 +19,6 @@ const findCategory = async (handle: string[]) => {
   const categories = await listCategories()
   const current = categories.find((c) => c.handle === handle.join("/"))
   return { categories, current }
-}
-
-export async function generateStaticParams() {
-  // Without a reachable backend at build time, pages render on first request
-  try {
-    const product_categories = await listCategories()
-
-    if (!product_categories) {
-      return []
-    }
-
-    const countryCodes = await listRegions().then((regions: StoreRegion[]) =>
-      regions?.map((r) => r.countries?.map((c) => c.iso_2)).flat()
-    )
-
-    return countryCodes
-      ?.map((countryCode: string | undefined) =>
-        product_categories.map((category: HttpTypes.StoreProductCategory) => ({
-          countryCode,
-          category: [category.handle],
-        }))
-      )
-      .flat()
-  } catch {
-    return []
-  }
 }
 
 export async function generateMetadata(props: Props): Promise<Metadata> {

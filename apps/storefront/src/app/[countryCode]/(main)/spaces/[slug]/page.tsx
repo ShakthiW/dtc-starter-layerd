@@ -6,15 +6,16 @@ import { getRegion } from "@lib/data/regions"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import ProductSection from "@modules/home/components/product-section"
 import SpaceTour, { spaceProducts } from "@modules/spaces/components/space-tour"
-import { getSpace, neighbours, SPACES } from "@modules/spaces/registry"
+import { getSpace, neighbours } from "@modules/spaces/registry"
 import { Space } from "@modules/spaces/types"
+
+// Rendered per request: prices are per region and the data layer reads
+// cookies, which a prebuilt page can't do. Medusa responses stay cached by
+// the fetch cache, so this stays fast.
+export const dynamic = "force-dynamic"
 
 type Props = {
   params: Promise<{ countryCode: string; slug: string }>
-}
-
-export function generateStaticParams() {
-  return SPACES.map((space) => ({ slug: space.slug }))
 }
 
 export async function generateMetadata(props: Props): Promise<Metadata> {

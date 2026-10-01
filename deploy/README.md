@@ -1,49 +1,65 @@
 # Deploying LAYERD to the droplet
 
-Production runs on the DigitalOcean droplet as one Docker Compose stack in
-`/opt/layerd`: Postgres, Redis, the Medusa backend (API + admin at
-`https://api.layerd.lk/app`), the Next.js storefront (`https://layerd.lk`)
-and Caddy for HTTPS. Only Caddy is published; the database and Redis are
-private to the stack.
+The droplet (168.144.116.90) runs LAYERD as one Docker Compose stack in
+`/opt/layerd`, built from a clone of this repo at `/opt/layerd/app`:
 
-Images are built on a laptop for `linux/amd64` and copied over, so the
-droplet (shared with other apps, no swap) never has to run a build.
+- **backend**: Medusa API and admin, `https://api.layerd.lk` (admin at `/app`)
+- **storefront**: Next.js, `https://layerd.lk`
+- **redis**: private to the stack
+- **caddy**: the only published service (80/443), automatic HTTPS
+- **database**: a `layerd` database and role inside the droplet's existing
+  Postgres (`holaa-postgres-1`); the backend joins the `holaa_default` network
+
+A 4 GB swap file (`/swapfile`) gives the builds headroom on the shared droplet.
 
 ## First deploy
 
 ```sh
-# 1. Backend image
-docker buildx build --platform linux/amd64 -f apps/backend/Dockerfile -t layerd-backend:latest --load .
-docker save layerd-backend:latest | gzip | ssh root@168.144.116.90 'gunzip | docker load'
+ssh root@168.144.116.90
+mkdir -p /opt/layerd && cd /opt/layerd
+git clone https://github.com/ShakthiW/dtc-starter-layerd.git app
+cp app/deploy/docker-compose.yml app/deploy/Caddyfile app/deploy/setup.sh .
+sh setup.sh                                   # database, role and backend.env
 
-# 2. Stack files and secrets on the droplet
-ssh root@168.144.116.90 'mkdir -p /opt/layerd'
-scp deploy/docker-compose.yml deploy/Caddyfile deploy/setup.sh root@168.144.116.90:/opt/layerd/
-ssh root@168.144.116.90 'sh /opt/layerd/setup.sh'
+docker compose build backend
+docker compose up -d redis backend            # migrations seed the store on first start
 
-# 3. Database and backend (migrations seed the store on first start)
-ssh root@168.144.116.90 'cd /opt/layerd && docker compose up -d postgres redis backend'
+# The storefront bakes in the production publishable key, created by the seed
+KEY=$(docker exec holaa-postgres-1 psql -U layerd -d layerd -tAc \
+  "select token from api_key where type='publishable' and revoked_at is null order by created_at limit 1")
+echo "STOREFRONT_PUBLISHABLE_KEY=$KEY" > .env
+docker compose build storefront
+docker compose up -d storefront
 
-# 4. The storefront needs the production publishable key, created by the seed
-ssh root@168.144.116.90 "cd /opt/layerd && docker compose exec -T postgres psql -U layerd -d layerd -tAc \"select token from api_key where type='publishable' and revoked_at is null limit 1\""
-docker buildx build --platform linux/amd64 -f apps/storefront/Dockerfile \
-  --build-arg NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY=<that key> -t layerd-storefront:latest --load .
-docker save layerd-storefront:latest | gzip | ssh root@168.144.116.90 'gunzip | docker load'
-ssh root@168.144.116.90 'cd /opt/layerd && docker compose up -d storefront'
+# Once DNS for layerd.lk, www.layerd.lk and api.layerd.lk points here
+docker compose up -d caddy
+```
 
-# 5. After DNS points layerd.lk, www.layerd.lk and api.layerd.lk at the droplet
-ssh root@168.144.116.90 'cd /opt/layerd && docker compose up -d caddy'
+Then create your admin user (keeps the password with you):
 
-# 6. An admin user (run it yourself so the password stays with you)
-ssh root@168.144.116.90 'cd /opt/layerd && docker compose exec backend medusa user -e you@example.com -p <password>'
+```sh
+docker compose exec backend medusa user -e you@example.com -p '<password>'
 ```
 
 ## Updating
 
-Rebuild the image that changed, `docker save | ssh docker load` it, then
-`docker compose up -d <service>`. Backend restarts run migrations first.
+```sh
+cd /opt/layerd/app && git pull
+cd /opt/layerd && docker compose build backend storefront && docker compose up -d backend storefront
+```
+
+Backend restarts run migrations first. If `deploy/` files changed, copy them
+up to `/opt/layerd` again.
+
+## DNS (Cloudflare)
+
+`layerd.lk` is on Cloudflare. Point `@`, `www` and `api` A records at
+168.144.116.90. Either set them to **DNS only** (grey cloud) so Caddy serves
+the certificate directly, or keep the proxy on with SSL/TLS mode **Full
+(strict)**.
 
 ## Backups
 
-The database lives in the `layerd_pgdata` volume and uploads in
-`layerd_uploads`. A nightly `pg_dump` is not set up yet.
+`pg_dump` the `layerd` database from `holaa-postgres-1`, and keep the
+`layerd_uploads` volume (admin-uploaded product photos). Neither is
+scheduled yet.

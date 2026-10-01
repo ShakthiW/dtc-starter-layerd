@@ -29,9 +29,10 @@ ENV NODE_ENV=production \
     PORT=8000 \
     HOSTNAME=0.0.0.0
 WORKDIR /app
-COPY --from=build /repo/apps/storefront/.next/standalone ./
-COPY --from=build /repo/apps/storefront/.next/static ./apps/storefront/.next/static
-COPY --from=build /repo/apps/storefront/public ./apps/storefront/public
+# Owned by the runtime user so Next can write its cache under .next/cache
+COPY --from=build --chown=node:node /repo/apps/storefront/.next/standalone ./
+COPY --from=build --chown=node:node /repo/apps/storefront/.next/static ./apps/storefront/.next/static
+COPY --from=build --chown=node:node /repo/apps/storefront/public ./apps/storefront/public
 USER node
 EXPOSE 8000
 CMD ["node", "apps/storefront/server.js"]
