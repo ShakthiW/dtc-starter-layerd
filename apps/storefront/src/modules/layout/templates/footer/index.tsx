@@ -42,6 +42,11 @@ export default async function Footer() {
                   Shop all
                 </LocalizedClientLink>
               </li>
+              <li>
+                <LocalizedClientLink href="/spaces" className={linkClass}>
+                  Spaces
+                </LocalizedClientLink>
+              </li>
               {topLevel.map((c) => (
                 <li key={c.id}>
                   <LocalizedClientLink

@@ -79,6 +79,12 @@ export function useKeyframeSnap(
         anchor = y
         return
       }
+      // Already resting on a keyframe (a deep link, a restored position): stay
+      const exact = k.find((p) => Math.abs(p - y) < 2)
+      if (exact !== undefined) {
+        anchor = exact
+        return
+      }
       const moved = y - anchor
       glideTo(target(y, Math.abs(moved) < NUDGE_PX ? 0 : Math.sign(moved), k))
     }

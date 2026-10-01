@@ -7,11 +7,12 @@ import CustomCta from "@modules/home/components/custom-cta"
 import KnittedBand from "@modules/home/components/knitted-band"
 import Process from "@modules/home/components/process"
 import ProductSection from "@modules/home/components/product-section"
-import RoomTour, { roomProducts } from "@modules/home/components/room-tour"
 import ShopByCategory, {
   CategoryTile,
 } from "@modules/home/components/shop-by-category"
 import TrustStrip from "@modules/home/components/trust-strip"
+import SpaceTour, { spaceProducts } from "@modules/spaces/components/space-tour"
+import { livingRoom } from "@modules/spaces/registry/living-room"
 
 export const metadata: Metadata = {
   title: "LAYERD | 3D printed objects for considered spaces",
@@ -41,7 +42,7 @@ export default async function Home(props: {
   const knitted = byHandle.get("knitted-friends")
 
   const [room, knittedFriends, tiles] = await Promise.all([
-    roomProducts(region),
+    spaceProducts(livingRoom, region),
     knitted ? products({ category_id: [knitted.id], limit: 4 }) : null,
     Promise.all(
       CATEGORY_ORDER.map(async (handle): Promise<CategoryTile | null> => {
@@ -70,7 +71,7 @@ export default async function Home(props: {
 
   return (
     <>
-      <RoomTour region={region} />
+      <SpaceTour space={livingRoom} region={region} />
       <ProductSection
         id="shop-the-room"
         eyebrow="Shop the room"

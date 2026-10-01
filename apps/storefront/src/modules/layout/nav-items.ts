@@ -1,6 +1,7 @@
 /** Top-level shop navigation, shared by the desktop header and mobile menu. */
 export const NAV_ITEMS = [
   { label: "Shop all", href: "/store" },
+  { label: "Spaces", href: "/spaces" },
   { label: "Lighting", href: "/categories/lighting" },
   { label: "Desk & Workspace", href: "/categories/desk-workspace" },
   { label: "Vases & Planters", href: "/categories/vases-planters" },
