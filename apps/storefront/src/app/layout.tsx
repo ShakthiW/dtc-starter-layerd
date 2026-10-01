@@ -1,17 +1,21 @@
 import { getBaseURL } from "@lib/util/env"
 import { Metadata } from "next"
-import { Archivo, Space_Grotesk } from "next/font/google"
+import { Geist, Instrument_Serif } from "next/font/google"
 import "styles/globals.css"
 
-const display = Space_Grotesk({
+// Geist carries UI and display headings; its geometry matches the stencil
+// wordmark. Instrument Serif is the editorial voice for room and page titles.
+const sans = Geist({
   subsets: ["latin"],
-  variable: "--font-display",
+  variable: "--font-sans",
   display: "swap",
 })
 
-const sans = Archivo({
+const serif = Instrument_Serif({
   subsets: ["latin"],
-  variable: "--font-sans",
+  weight: "400",
+  style: ["normal", "italic"],
+  variable: "--font-serif",
   display: "swap",
 })
 
@@ -24,7 +28,7 @@ export default function RootLayout(props: { children: React.ReactNode }) {
     <html
       lang="en"
       data-mode="light"
-      className={`${display.variable} ${sans.variable}`}
+      className={`${sans.variable} ${serif.variable}`}
     >
       <body>
         <main className="relative">{props.children}</main>

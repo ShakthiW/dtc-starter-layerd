@@ -48,7 +48,7 @@ export default async function OrderCompletedTemplate({
             aria-hidden="true"
             className="h-8 w-8 text-accent-ink"
           />
-          <h1 className="font-display text-4xl font-semibold tracking-tight">
+          <h1 className="font-serif leading-[1.05] text-4xl">
             Thank you{firstName ? `, ${firstName}` : ""}!
           </h1>
           <p className="text-lg text-muted">

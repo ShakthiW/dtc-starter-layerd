@@ -1,4 +1,5 @@
 import { listCategories } from "@lib/data/categories"
+import Image from "next/image"
 
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { SOCIAL_LINKS } from "@modules/layout/nav-items"
@@ -17,11 +18,15 @@ export default async function Footer() {
       <div className="content-container py-16 small:py-20">
         <div className="grid grid-cols-2 gap-10 small:grid-cols-[1.4fr_1fr_1fr_1fr]">
           <div className="col-span-2 small:col-span-1 max-w-xs">
-            <LocalizedClientLink
-              href="/"
-              className="font-display text-2xl font-semibold tracking-[0.2em]"
-            >
-              LAYERD
+            <LocalizedClientLink href="/" className="inline-flex" aria-label="LAYERD home">
+              <Image
+                src="/brand/layerd-white.png"
+                alt="LAYERD"
+                width={1200}
+                height={507}
+                sizes="160px"
+                className="h-14 w-auto"
+              />
             </LocalizedClientLink>
             <p className="mt-4 text-sm leading-relaxed text-white/70">
               Modern objects for considered spaces, designed and 3D printed

@@ -18,7 +18,7 @@ const ShopByCategory = ({ tiles }: { tiles: CategoryTile[] }) => {
       <div className="mb-8 flex items-end justify-between gap-4">
         <div>
           <p className="eyebrow">Shop by use</p>
-          <h2 className="mt-2 font-display text-3xl font-semibold tracking-tight">
+          <h2 className="mt-2 font-serif leading-[1.05] text-4xl">
             Find your piece
           </h2>
         </div>

@@ -44,7 +44,7 @@ const Overview = ({ customer, orders }: OverviewProps) => {
     <div className="flex flex-col gap-10" data-testid="overview-page-wrapper">
       <header className="flex flex-col gap-1">
         <h1
-          className="font-display text-3xl font-semibold tracking-tight"
+          className="font-serif leading-[1.05] text-4xl"
           data-testid="welcome-message"
           data-value={customer?.first_name}
         >

@@ -13,7 +13,7 @@ const EmptyCartMessage = () => {
       <span className="flex h-14 w-14 items-center justify-center rounded-full bg-surface">
         <ShoppingBag aria-hidden="true" />
       </span>
-      <h1 className="font-display text-3xl font-semibold tracking-tight">
+      <h1 className="font-serif leading-[1.05] text-4xl">
         Your cart is empty
       </h1>
       <p className="text-muted">

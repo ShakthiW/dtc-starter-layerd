@@ -32,7 +32,7 @@ const LoginTemplate = ({ panelImage }: { panelImage?: string | null }) => {
       <section className="flex flex-col justify-between gap-8 rounded-large bg-sage p-6 small:p-10">
         <div className="flex flex-col gap-4">
           <p className="eyebrow">Your account</p>
-          <h1 className="font-display text-3xl font-semibold tracking-tight small:text-4xl">
+          <h1 className="font-serif leading-[1.05] text-4xl small:text-5xl">
             Welcome to LAYERD
           </h1>
           <p className="max-w-sm leading-relaxed text-muted">

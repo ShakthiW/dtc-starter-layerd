@@ -20,7 +20,7 @@ const CustomCta = () => {
       <div className="grid gap-10 border-t border-line pt-16 small:grid-cols-2 small:gap-16">
         <div className="flex flex-col items-start gap-5">
           <p className="eyebrow">Print your model</p>
-          <h2 className="font-display text-3xl font-semibold tracking-tight small:text-4xl">
+          <h2 className="font-serif leading-[1.05] text-4xl small:text-5xl">
             Have a 3D model ready?
           </h2>
           <p className="max-w-md leading-relaxed text-muted">

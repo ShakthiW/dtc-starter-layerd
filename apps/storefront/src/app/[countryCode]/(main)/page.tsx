@@ -4,10 +4,10 @@ import { listCategories } from "@lib/data/categories"
 import { listProducts } from "@lib/data/products"
 import { getRegion } from "@lib/data/regions"
 import CustomCta from "@modules/home/components/custom-cta"
-import Hero from "@modules/home/components/hero"
 import KnittedBand from "@modules/home/components/knitted-band"
 import Process from "@modules/home/components/process"
 import ProductSection from "@modules/home/components/product-section"
+import RoomTour, { roomProducts } from "@modules/home/components/room-tour"
 import ShopByCategory, {
   CategoryTile,
 } from "@modules/home/components/shop-by-category"
@@ -19,7 +19,6 @@ export const metadata: Metadata = {
     "Lamps, vases, desk organisers and gifts, designed and 3D printed layer by layer in Sri Lanka. Cash on delivery island-wide.",
 }
 
-const HERO_PRODUCT_HANDLE = "the-wave-lamp"
 const CATEGORY_ORDER = ["lighting", "desk-workspace", "vases-planters", "gifts"]
 
 export default async function Home(props: {
@@ -40,11 +39,9 @@ export default async function Home(props: {
   const categories = await listCategories()
   const byHandle = new Map(categories.map((c) => [c.handle, c]))
   const knitted = byHandle.get("knitted-friends")
-  const lighting = byHandle.get("lighting")
 
-  const [hero, lamps, knittedFriends, tiles] = await Promise.all([
-    products({ handle: HERO_PRODUCT_HANDLE, limit: 1 }),
-    lighting ? products({ category_id: [lighting.id], limit: 4 }) : null,
+  const [room, knittedFriends, tiles] = await Promise.all([
+    roomProducts(region),
     knitted ? products({ category_id: [knitted.id], limit: 4 }) : null,
     Promise.all(
       CATEGORY_ORDER.map(async (handle): Promise<CategoryTile | null> => {
@@ -73,18 +70,19 @@ export default async function Home(props: {
 
   return (
     <>
-      <Hero product={hero.products[0]} />
+      <RoomTour region={region} />
+      <ProductSection
+        id="shop-the-room"
+        eyebrow="Shop the room"
+        title="Everything you just walked past"
+        href="/store"
+        linkLabel="Browse everything"
+        products={room}
+        region={region}
+      />
       <TrustStrip />
       <ShopByCategory
         tiles={tiles.filter((t): t is CategoryTile => Boolean(t))}
-      />
-      <ProductSection
-        eyebrow="Lighting"
-        title="The lamp edit"
-        href="/categories/lighting"
-        linkLabel="All lighting"
-        products={lamps?.products ?? []}
-        region={region}
       />
       <Process />
       <KnittedBand

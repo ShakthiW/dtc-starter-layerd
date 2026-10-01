@@ -18,7 +18,7 @@ const KnittedBand = ({ products, total, region }: KnittedBandProps) => {
       <div className="grid gap-10 rounded-large bg-sage px-5 py-10 small:grid-cols-[1fr_2fr] small:items-center small:gap-12 small:p-12">
         <div className="flex flex-col items-start gap-5">
           <p className="eyebrow">Gifts under Rs 1,500</p>
-          <h2 className="font-display text-3xl font-semibold tracking-tight small:text-4xl">
+          <h2 className="font-serif leading-[1.05] text-4xl small:text-5xl">
             Meet the Knitted Friends
           </h2>
           <p className="leading-relaxed text-muted">

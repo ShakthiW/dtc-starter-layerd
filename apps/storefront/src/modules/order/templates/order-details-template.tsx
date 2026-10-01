@@ -30,7 +30,7 @@ const OrderDetailsTemplate: React.FC<OrderDetailsTemplateProps> = ({
       </LocalizedClientLink>
 
       <header className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="font-display text-3xl font-semibold tracking-tight">
+        <h1 className="font-serif leading-[1.05] text-4xl">
           Order #{order.display_id}
         </h1>
         <span className="rounded-full bg-sage px-3 py-1 text-sm font-medium text-ink">

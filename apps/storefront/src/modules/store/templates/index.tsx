@@ -124,7 +124,7 @@ const StoreTemplate = ({
         )}
         <div className="flex flex-col gap-2">
           <h1
-            className="font-display text-4xl font-semibold tracking-tight small:text-5xl"
+            className="font-serif leading-[1.05] text-4xl small:text-6xl"
             data-testid="store-page-title"
           >
             {title}

@@ -3,20 +3,21 @@
 @import "tailwindcss/utilities";
 
 @layer base {
-  /* LAYERD tokens (RGB channels). Contrast checked against WCAG AA:
-     ink on paper 16.4:1, muted on paper 7.1:1, accent-ink on paper 5.5:1,
-     white on accent 4.9:1, line-strong on surface >= 3:1 for form fields. */
+  /* LAYERD tokens (RGB channels): plaster, ink, stone and one deep-moss
+     accent, no gold. Contrast checked against WCAG AA: ink on paper 16.1:1,
+     muted on paper 6.3:1, accent on paper 9.5:1, surface on accent 10.5:1,
+     line-strong on surface 3.8:1 for form fields. */
   :root {
-    --layerd-paper: 250 247 242;
-    --layerd-surface: 255 255 255;
-    --layerd-ink: 28 25 23;
-    --layerd-muted: 87 83 78;
-    --layerd-accent: 161 98 7;
-    --layerd-accent-ink: 138 90 11;
-    --layerd-sage: 230 236 227;
-    --layerd-blush: 245 230 223;
-    --layerd-line: 214 211 209;
-    --layerd-line-strong: 120 113 108;
+    --layerd-paper: 242 239 234;
+    --layerd-surface: 251 250 247;
+    --layerd-ink: 20 20 20;
+    --layerd-muted: 91 86 80;
+    --layerd-accent: 52 64 47;
+    --layerd-accent-ink: 52 64 47;
+    --layerd-sage: 227 231 221;
+    --layerd-blush: 232 227 219;
+    --layerd-line: 218 213 205;
+    --layerd-line-strong: 133 126 118;
   }
 
   body {

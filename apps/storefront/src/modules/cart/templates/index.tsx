@@ -29,7 +29,7 @@ const CartTemplate = ({
     <div className="content-container py-8 small:py-12" data-testid="cart-container">
       {cart?.items?.length ? (
         <>
-          <h1 className="mb-8 font-display text-4xl font-semibold tracking-tight">
+          <h1 className="mb-8 font-serif leading-[1.05] text-4xl">
             Your cart{" "}
             <span className="text-2xl font-normal tabular-nums text-muted">
               ({itemCount} {itemCount === 1 ? "item" : "items"})

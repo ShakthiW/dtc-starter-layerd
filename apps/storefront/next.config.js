@@ -25,7 +25,9 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   images: {
-    unoptimized: true,
+    // Optimised by Next (resized per device, AVIF/WebP). The room plates are
+    // 4800px and must never ship at full size to a phone.
+    formats: ["image/avif", "image/webp"],
     remotePatterns: [
       {
         protocol: "http",

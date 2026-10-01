@@ -1,6 +1,7 @@
 import React, { Suspense } from "react"
 
 import ImageGallery from "@modules/products/components/image-gallery"
+import InTheRoom from "@modules/products/components/in-the-room"
 import ProductActions from "@modules/products/components/product-actions"
 import ProductTabs from "@modules/products/components/product-tabs"
 import RelatedProducts from "@modules/products/components/related-products"
@@ -53,6 +54,10 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
           <ProductTabs product={product} />
         </div>
       </div>
+
+      <Suspense fallback={null}>
+        <InTheRoom product={product} region={region} />
+      </Suspense>
 
       <div className="content-container py-16 small:py-24" data-testid="related-products-container">
         <Suspense fallback={<SkeletonRelatedProducts />}>

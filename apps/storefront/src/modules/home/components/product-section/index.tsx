@@ -10,6 +10,7 @@ type ProductSectionProps = {
   linkLabel: string
   products: HttpTypes.StoreProduct[]
   region: HttpTypes.StoreRegion
+  id?: string
 }
 
 const ProductSection = ({
@@ -19,17 +20,18 @@ const ProductSection = ({
   linkLabel,
   products,
   region,
+  id,
 }: ProductSectionProps) => {
   if (!products.length) {
     return null
   }
 
   return (
-    <section className="content-container py-16 small:py-24">
+    <section id={id} className="content-container scroll-mt-28 py-16 small:py-24">
       <div className="mb-8 flex items-end justify-between gap-4">
         <div>
           <p className="eyebrow">{eyebrow}</p>
-          <h2 className="mt-2 font-display text-3xl font-semibold tracking-tight">
+          <h2 className="mt-2 font-serif text-4xl leading-tight small:text-5xl">
             {title}
           </h2>
         </div>

@@ -46,9 +46,9 @@ export default async function RelatedProducts({
       <p className="eyebrow">Keep browsing</p>
       <h2
         id="related-heading"
-        className="mt-2 mb-8 font-display text-3xl font-semibold tracking-tight"
+        className="mt-2 mb-8 font-serif leading-[1.05] text-4xl"
       >
-        You may also like
+        Complete the space
       </h2>
       <ul className="grid grid-cols-2 gap-x-4 gap-y-10 small:grid-cols-4 small:gap-x-6">
         {products.map((related) => (

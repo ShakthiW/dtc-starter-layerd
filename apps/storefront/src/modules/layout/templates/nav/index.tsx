@@ -1,3 +1,4 @@
+import Image from "next/image"
 import { Suspense } from "react"
 
 import { ShoppingBag, User } from "@medusajs/icons"
@@ -23,10 +24,19 @@ export default function Nav() {
             <SideMenu />
             <LocalizedClientLink
               href="/"
-              className="font-display text-xl font-semibold tracking-[0.2em] text-ink"
+              className="flex h-11 items-center"
+              aria-label="LAYERD home"
               data-testid="nav-store-link"
             >
-              LAYERD
+              <Image
+                src="/brand/layerd-black.png"
+                alt="LAYERD"
+                width={1200}
+                height={507}
+                priority
+                sizes="96px"
+                className="h-9 w-auto"
+              />
             </LocalizedClientLink>
             <NavLinks />
           </div>

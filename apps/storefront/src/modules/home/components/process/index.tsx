@@ -22,7 +22,7 @@ const Process = () => {
       <div className="content-container py-16 small:py-24">
         <div className="max-w-2xl">
           <p className="eyebrow">How it&apos;s made</p>
-          <h2 className="mt-2 font-display text-3xl font-semibold tracking-tight small:text-4xl">
+          <h2 className="mt-2 font-serif leading-[1.05] text-4xl small:text-5xl">
             Built layer by layer
           </h2>
         </div>
