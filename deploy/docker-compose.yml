@@ -1,20 +1,11 @@
-# LAYERD production stack on the droplet (/opt/layerd).
-# Only Caddy is published (80/443); everything else is on a private network.
+# LAYERD production stack on the droplet. Lives in /opt/layerd, with the
+# repo cloned at /opt/layerd/app. Only Caddy is published (80/443).
+#
+# The database is the droplet's existing Postgres (holaa-postgres-1), with
+# its own `layerd` database and role; the backend joins that network.
 name: layerd
 
 services:
-  postgres:
-    image: postgres:16
-    restart: unless-stopped
-    env_file: postgres.env
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
-      interval: 5s
-      retries: 20
-    mem_limit: 512m
-
   redis:
     image: redis:7-alpine
     restart: unless-stopped
@@ -24,14 +15,17 @@ services:
     mem_limit: 128m
 
   backend:
+    build:
+      context: ./app
+      dockerfile: apps/backend/Dockerfile
     image: layerd-backend:latest
     restart: unless-stopped
     env_file: backend.env
     depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_started
+      - redis
+    networks:
+      - default
+      - holaa
     volumes:
       # Product photos uploaded through the admin
       - uploads:/repo/apps/backend/.medusa/server/static
@@ -43,6 +37,12 @@ services:
     mem_limit: 1200m
 
   storefront:
+    build:
+      context: ./app
+      dockerfile: apps/storefront/Dockerfile
+      args:
+        # Set in /opt/layerd/.env once the backend has created it
+        NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY: ${STOREFRONT_PUBLISHABLE_KEY:-}
     image: layerd-storefront:latest
     restart: unless-stopped
     environment:
@@ -69,8 +69,12 @@ services:
       - backend
     mem_limit: 128m
 
+networks:
+  holaa:
+    name: holaa_default
+    external: true
+
 volumes:
-  pgdata:
   redisdata:
   uploads:
   caddy_data:
