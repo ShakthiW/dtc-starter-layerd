@@ -96,7 +96,7 @@ function lightFor(space: Space, act: Act, within: number): Layer[] {
   if (reveal) {
     const pools = reveal.at.map((handle, n) => {
       const box = space.objects.find((o) => o.handle === handle)?.box
-      const r = clamp((within - reveal.start - n * reveal.step) / 0.1) * 26
+      const r = clamp((within - reveal.start - n * reveal.step) / 0.1) * (reveal.radius ?? 26)
       if (!box || r <= 0) return null
       const c = centre(box)
       return `radial-gradient(circle at ${c.x * 100}% ${c.y * 100}%, #000 ${
@@ -384,15 +384,16 @@ export default function SpaceStage({
         }
       }
 
-      // Copy on a dark plate waits until the light has actually changed.
+      // Copy on a dark plate waits until the light has actually changed: the
+      // fade, or the reveal's fill when there is no fade.
       let index = Math.round(pos)
-      const fading = acts[index]?.light?.fade
-      if (
-        index === current &&
-        fading &&
-        moving === 0 &&
-        clamp((within - fading.from) / (fading.until - fading.from)) < 0.6
-      ) {
+      const change = acts[index]?.light
+      const gate = change?.fade
+        ? [change.fade.from, change.fade.until]
+        : change?.reveal && acts[index].tone === "dark"
+          ? change.reveal.fill
+          : null
+      if (index === current && gate && moving === 0 && clamp((within - gate[0]) / (gate[1] - gate[0])) < 0.6) {
         index = -1
       }
       if (index !== activeRef.current) {
@@ -608,12 +609,17 @@ function ActCopy({
         const shown = index === activeIndex
         const dark = a.tone === "dark"
         const focus = a.layout === "focus"
+        const right = a.align === "end"
         const place = {
-          hero: "inset-x-0 top-[9%] px-6 text-center items-center",
+          hero: right
+            ? "left-6 right-[6%] top-[9%] items-end text-right small:left-auto small:max-w-2xl"
+            : "inset-x-0 top-[9%] px-6 text-center items-center",
           end: "inset-x-0 bottom-[9%] px-6 text-center items-center",
           focus:
             "inset-x-3 bottom-3 rounded-large bg-surface/95 p-5 backdrop-blur small:inset-x-auto small:bottom-auto small:right-[6%] small:top-1/2 small:w-[min(30rem,32vw)] small:-translate-y-1/2 small:bg-transparent small:p-0 small:backdrop-blur-0",
-          caption: "left-[6%] right-[6%] bottom-[12%] max-w-xl",
+          caption: right
+            ? "left-[6%] right-[6%] top-[10%] items-end text-right small:left-auto small:max-w-xl"
+            : "left-[6%] right-[6%] bottom-[12%] max-w-xl",
         }[a.layout]
         const heading =
           dark && !focus
@@ -650,8 +656,8 @@ function ActCopy({
               </h2>
             )}
             <p
-              className={`max-w-md text-base leading-relaxed ${copy} ${
-                a.layout === "hero" ? "mx-auto" : ""
+              className={`max-w-[min(28rem,100%)] text-base leading-relaxed ${copy} ${
+                a.layout === "hero" && !right ? "mx-auto" : ""
               }`}
             >
               {a.body}

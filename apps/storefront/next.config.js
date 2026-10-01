@@ -13,6 +13,8 @@ const S3_PATHNAME = process.env.MEDUSA_CLOUD_S3_PATHNAME
  */
 const nextConfig = {
   reactStrictMode: true,
+  // A self-contained server for the Docker image (node server.js)
+  output: "standalone",
   logging: {
     fetches: {
       fullUrl: true,
@@ -40,6 +42,11 @@ const nextConfig = {
       {
         protocol: "https",
         hostname: "*.s3.amazonaws.com",
+      },
+      // Product photos uploaded through the admin, served by the backend
+      {
+        protocol: "https",
+        hostname: "api.layerd.lk",
       },
       // Placeholder product photos from the current layerd.lk store
       {

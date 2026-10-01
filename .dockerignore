@@ -1,0 +1,15 @@
+**/node_modules
+**/.next
+**/.medusa
+**/.turbo
+**/dist
+**/.env
+**/.env.*
+!**/.env.template
+.git
+scrollcraft
+deploy
+**/*.log
+**/tsconfig.tsbuildinfo
+apps/storefront/public/Logo*
+apps/storefront/public/ShortLogo.svg

@@ -18,24 +18,29 @@ const findCategory = async (handle: string[]) => {
 }
 
 export async function generateStaticParams() {
-  const product_categories = await listCategories()
+  // Without a reachable backend at build time, pages render on first request
+  try {
+    const product_categories = await listCategories()
 
-  if (!product_categories) {
+    if (!product_categories) {
+      return []
+    }
+
+    const countryCodes = await listRegions().then((regions: StoreRegion[]) =>
+      regions?.map((r) => r.countries?.map((c) => c.iso_2)).flat()
+    )
+
+    return countryCodes
+      ?.map((countryCode: string | undefined) =>
+        product_categories.map((category: HttpTypes.StoreProductCategory) => ({
+          countryCode,
+          category: [category.handle],
+        }))
+      )
+      .flat()
+  } catch {
     return []
   }
-
-  const countryCodes = await listRegions().then((regions: StoreRegion[]) =>
-    regions?.map((r) => r.countries?.map((c) => c.iso_2)).flat()
-  )
-
-  return countryCodes
-    ?.map((countryCode: string | undefined) =>
-      product_categories.map((category: HttpTypes.StoreProductCategory) => ({
-        countryCode,
-        category: [category.handle],
-      }))
-    )
-    .flat()
 }
 
 export async function generateMetadata(props: Props): Promise<Metadata> {

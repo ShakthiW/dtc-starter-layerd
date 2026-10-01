@@ -1,0 +1,16 @@
+# HTTPS certificates are issued automatically once DNS points here.
+
+layerd.lk {
+	encode zstd gzip
+	reverse_proxy storefront:8000
+}
+
+www.layerd.lk {
+	redir https://layerd.lk{uri} permanent
+}
+
+# Medusa API and the admin dashboard (/app)
+api.layerd.lk {
+	encode zstd gzip
+	reverse_proxy backend:9000
+}

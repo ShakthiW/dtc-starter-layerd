@@ -31,7 +31,15 @@ export type Light = {
    * Reveal a plate in pools around products, one after another (lamps coming
    * on, sun reaching objects), then across the whole frame.
    */
-  reveal?: { plate: string; at: string[]; start: number; step: number; fill: [number, number] }
+  reveal?: {
+    plate: string
+    at: string[]
+    start: number
+    step: number
+    fill: [number, number]
+    /** Pool size, as a percentage of the plate. Smaller for close-set objects. */
+    radius?: number
+  }
 }
 
 export type Act = {
@@ -48,6 +56,12 @@ export type Act = {
    * action, with every product as a hotspot.
    */
   layout: "hero" | "focus" | "caption" | "end"
+  /**
+   * Where hero and caption copy sits, to keep it on an empty part of the
+   * photograph. hero: top centre (default) or top right. caption: bottom left
+   * (default) or top right.
+   */
+  align?: "start" | "end"
   frame: Box
   /** A tighter frame for phones, where the label sheet takes the lower half. */
   phoneFrame?: Box

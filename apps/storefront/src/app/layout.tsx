@@ -29,8 +29,12 @@ export default function RootLayout(props: { children: React.ReactNode }) {
       lang="en"
       data-mode="light"
       className={`${sans.variable} ${serif.variable}`}
+      // Browser extensions (Grammarly, password managers) add attributes to
+      // <html> and <body> before React loads. This ignores only those two
+      // tags' attributes; mismatches anywhere inside are still reported.
+      suppressHydrationWarning
     >
-      <body>
+      <body suppressHydrationWarning>
         <main className="relative">{props.children}</main>
       </body>
     </html>

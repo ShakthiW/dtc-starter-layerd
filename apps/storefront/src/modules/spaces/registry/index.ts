@@ -1,9 +1,12 @@
 import { Space } from "../types"
 import { livingRoom } from "./living-room"
+import { bedside } from "./bedside"
+import { kidsShelf } from "./kids-shelf"
+import { kitchen } from "./kitchen"
 import { workDesk } from "./work-desk"
 
 /** Every space, in the order the index and previous/next links use. */
-export const SPACES: Space[] = [livingRoom, workDesk]
+export const SPACES: Space[] = [livingRoom, workDesk, bedside, kitchen, kidsShelf]
 
 export const getSpace = (slug: string) => SPACES.find((s) => s.slug === slug)
 

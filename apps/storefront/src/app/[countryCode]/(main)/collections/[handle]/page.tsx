@@ -14,30 +14,35 @@ type Props = {
 }
 
 export async function generateStaticParams() {
-  const { collections } = await listCollections({
-    fields: "*products",
-  })
+  // Without a reachable backend at build time, pages render on first request
+  try {
+    const { collections } = await listCollections({
+      fields: "*products",
+    })
 
-  if (!collections) {
+    if (!collections) {
+      return []
+    }
+
+    const countryCodes = await listRegions().then(
+      (regions: StoreRegion[]) =>
+        regions
+          ?.map((r) => r.countries?.map((c) => c.iso_2))
+          .flat()
+          .filter(Boolean) as string[]
+    )
+
+    return countryCodes
+      ?.map((countryCode: string) =>
+        collections.map((collection: StoreCollection) => ({
+          countryCode,
+          handle: collection.handle,
+        }))
+      )
+      .flat()
+  } catch {
     return []
   }
-
-  const countryCodes = await listRegions().then(
-    (regions: StoreRegion[]) =>
-      regions
-        ?.map((r) => r.countries?.map((c) => c.iso_2))
-        .flat()
-        .filter(Boolean) as string[]
-  )
-
-  return countryCodes
-    ?.map((countryCode: string) =>
-      collections.map((collection: StoreCollection) => ({
-        countryCode,
-        handle: collection.handle,
-      }))
-    )
-    .flat()
 }
 
 export async function generateMetadata(props: Props): Promise<Metadata> {

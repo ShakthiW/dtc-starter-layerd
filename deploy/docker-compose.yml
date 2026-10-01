@@ -1,0 +1,77 @@
+# LAYERD production stack on the droplet (/opt/layerd).
+# Only Caddy is published (80/443); everything else is on a private network.
+name: layerd
+
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    env_file: postgres.env
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      retries: 20
+    mem_limit: 512m
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "96mb", "--maxmemory-policy", "noeviction"]
+    volumes:
+      - redisdata:/data
+    mem_limit: 128m
+
+  backend:
+    image: layerd-backend:latest
+    restart: unless-stopped
+    env_file: backend.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+      # Product photos uploaded through the admin
+      - uploads:/repo/apps/backend/.medusa/server/static
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:9000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      start_period: 120s
+      retries: 10
+    mem_limit: 1200m
+
+  storefront:
+    image: layerd-storefront:latest
+    restart: unless-stopped
+    environment:
+      # Server-side calls stay on the private network
+      MEDUSA_BACKEND_URL: http://backend:9000
+    depends_on:
+      backend:
+        condition: service_healthy
+    mem_limit: 640m
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - storefront
+      - backend
+    mem_limit: 128m
+
+volumes:
+  pgdata:
+  redisdata:
+  uploads:
+  caddy_data:
+  caddy_config:

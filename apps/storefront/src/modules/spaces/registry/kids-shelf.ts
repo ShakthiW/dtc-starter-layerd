@@ -1,0 +1,130 @@
+import { Space } from "../types"
+
+const dir = "/spaces/kids-shelf"
+
+/**
+ * A child's shelf of Knitted Friends. At night the nightlight finds each
+ * friend one by one. Boxes from Gemini detection on day.jpg; the night plates
+ * are pixel-aligned edits of it.
+ */
+export const kidsShelf: Space = {
+  slug: "kids-shelf",
+  name: "Kids' shelf",
+  summary: "A low shelf of Knitted Friends, from playtime to the nightlight.",
+  alt: "A low white shelf in a child's room with a row of LAYERD knitted animal figurines and a hexagon lamp",
+  plate: { width: 4800, height: 2036 },
+  plates: {
+    day: { src: `${dir}/day.jpg`, blur: `${dir}/day-blur.jpg` },
+    nightOff: { src: `${dir}/night-off.jpg` },
+    nightLit: { src: `${dir}/night.jpg`, blur: `${dir}/night-blur.jpg` },
+  },
+  poster: "day",
+  objects: [
+    { handle: "minimalist-table-lamp-hexagon", name: "Hexagon table lamp", box: { x: 0.232, y: 0.368, w: 0.045, h: 0.197 } },
+    { handle: "knitted-fox-knitted-figurine-key-tag", name: "Knitted Fox", box: { x: 0.319, y: 0.446, w: 0.044, h: 0.122 } },
+    { handle: "knitted-polarbear-figurine-key-tag", name: "Knitted Polar Bear", box: { x: 0.401, y: 0.453, w: 0.043, h: 0.115 } },
+    { handle: "knitted-bunny-figurine-key-tag", name: "Knitted Bunny", box: { x: 0.483, y: 0.423, w: 0.034, h: 0.145 } },
+    { handle: "knitted-seal-figurine-key-tag", name: "Knitted Seal", box: { x: 0.555, y: 0.47, w: 0.056, h: 0.098 } },
+    { handle: "knitted-owl-figurine-key-tag", name: "Knitted Owl", box: { x: 0.646, y: 0.453, w: 0.04, h: 0.115 } },
+    { handle: "knitted-elephant-with-heart-figurine-key-tag", name: "Knitted Elephant", box: { x: 0.726, y: 0.433, w: 0.049, h: 0.135 } },
+  ],
+  acts: [
+    {
+      id: "arrival",
+      span: 1.1,
+      stops: [0],
+      layout: "hero",
+      frame: { x: 0, y: 0, w: 1, h: 1 },
+      fit: "cover",
+      scene: "day",
+      turn: { yaw: -3, roll: -0.5 },
+      tone: "light",
+      products: [],
+      title: "Friends for the shelf.",
+      body: "Knitted Friends: printed to look hand-knitted, as figurines or key tags.",
+    },
+    {
+      id: "first",
+      span: 1.5,
+      layout: "focus",
+      frame: { x: 0.31, y: 0.4, w: 0.215, h: 0.18 },
+      phoneFrame: { x: 0.31, y: 0.42, w: 0.14, h: 0.16 },
+      fit: "cover",
+      scene: "day",
+      turn: { yaw: 2 },
+      tone: "light",
+      products: [
+        "knitted-fox-knitted-figurine-key-tag",
+        "knitted-polarbear-figurine-key-tag",
+        "knitted-bunny-figurine-key-tag",
+      ],
+      title: "A fox, a bear, a bunny.",
+      body: "Every stitch is a printed layer, so they feel like knitting and last like plastic.",
+    },
+    {
+      id: "more",
+      span: 1.5,
+      layout: "focus",
+      frame: { x: 0.55, y: 0.41, w: 0.23, h: 0.17 },
+      phoneFrame: { x: 0.62, y: 0.42, w: 0.16, h: 0.16 },
+      fit: "cover",
+      scene: "day",
+      turn: { yaw: -2 },
+      tone: "light",
+      products: [
+        "knitted-seal-figurine-key-tag",
+        "knitted-owl-figurine-key-tag",
+        "knitted-elephant-with-heart-figurine-key-tag",
+      ],
+      title: "And a few more.",
+      body: "A seal, an owl and an elephant who brought a heart. Fifteen friends in all.",
+    },
+    {
+      id: "awake",
+      span: 2.6,
+      hold: 0.82,
+      // Dark first, then one nudge lets the nightlight find each friend in turn
+      stops: [0.24, 0.8],
+      layout: "caption",
+      frame: { x: 0.12, y: 0.15, w: 0.76, h: 0.7 },
+      fit: "cover",
+      scene: "day",
+      light: {
+        fade: { to: "nightOff", from: 0, until: 0.2 },
+        reveal: {
+          plate: "nightLit",
+          at: [
+            "minimalist-table-lamp-hexagon",
+            "knitted-fox-knitted-figurine-key-tag",
+            "knitted-polarbear-figurine-key-tag",
+            "knitted-bunny-figurine-key-tag",
+            "knitted-seal-figurine-key-tag",
+            "knitted-owl-figurine-key-tag",
+            "knitted-elephant-with-heart-figurine-key-tag",
+          ],
+          start: 0.26,
+          step: 0.055,
+          fill: [0.68, 0.8],
+          radius: 9,
+        },
+      },
+      tone: "dark",
+      products: [],
+      title: "Who's still awake?",
+      body: "The Hexagon lamp makes a gentle nightlight. Leave it on and every friend keeps watch.",
+    },
+    {
+      id: "dreams",
+      span: 1.2,
+      stops: [0.2],
+      layout: "end",
+      frame: { x: 0, y: 0, w: 1, h: 1 },
+      fit: "cover",
+      scene: "nightLit",
+      tone: "dark",
+      products: [],
+      title: "Sweet dreams.",
+      body: "Every friend on this shelf is in the shop. Tap one to see it up close.",
+    },
+  ],
+}
