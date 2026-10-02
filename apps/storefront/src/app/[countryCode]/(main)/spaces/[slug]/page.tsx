@@ -25,7 +25,14 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
   return {
     title: `${space.name} | LAYERD Spaces`,
     description: space.summary,
-    openGraph: { images: [space.plates[space.poster].src] },
+    // A 1200x630 card per space; the full plates are too large for link previews
+    openGraph: {
+      siteName: "LAYERD",
+      title: `${space.name} | LAYERD Spaces`,
+      description: space.summary,
+      images: [{ url: `/spaces/${space.slug}/og.jpg`, width: 1200, height: 630, alt: space.alt }],
+    },
+    twitter: { card: "summary_large_image", images: [`/spaces/${space.slug}/og.jpg`] },
   }
 }
 

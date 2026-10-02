@@ -63,8 +63,14 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
     title: `${product.title} | LAYERD`,
     description,
     openGraph: {
+      siteName: "LAYERD",
       title: `${product.title} | LAYERD`,
       description,
+      images: product.thumbnail ? [product.thumbnail] : [],
+    },
+    // The product photo on X too, not the site-wide card
+    twitter: {
+      card: "summary_large_image",
       images: product.thumbnail ? [product.thumbnail] : [],
     },
   }

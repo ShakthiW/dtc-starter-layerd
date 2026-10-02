@@ -21,6 +21,12 @@ const serif = Instrument_Serif({
 
 export const metadata: Metadata = {
   metadataBase: new URL(getBaseURL()),
+  applicationName: "LAYERD",
+  description:
+    "Lamps, vases, desk organisers and gifts, designed and 3D printed layer by layer in Sri Lanka.",
+  // The share image itself comes from app/opengraph-image.jpg
+  openGraph: { siteName: "LAYERD", locale: "en_LK", type: "website" },
+  twitter: { card: "summary_large_image" },
 }
 
 export default function RootLayout(props: { children: React.ReactNode }) {
