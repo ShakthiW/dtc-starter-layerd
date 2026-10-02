@@ -27,11 +27,11 @@ export default function QuickAdd({
     "inline-flex min-h-[44px] shrink-0 items-center justify-center rounded-full px-4 text-xs font-medium transition-colors duration-200"
   const solid =
     tone === "dark"
-      ? "bg-ink text-white hover:bg-ink/85 small:bg-white small:text-ink small:hover:bg-white/85"
+      ? "bg-ink text-white hover:bg-ink/85 panel:bg-white panel:text-ink panel:hover:bg-white/85"
       : "bg-ink text-white hover:bg-ink/85"
   const outline =
     tone === "dark"
-      ? "border border-ink text-ink hover:bg-ink hover:text-white small:border-white/70 small:text-white small:hover:bg-white small:hover:text-ink"
+      ? "border border-ink text-ink hover:bg-ink hover:text-white panel:border-white/70 panel:text-white panel:hover:bg-white panel:hover:text-ink"
       : "border border-ink text-ink hover:bg-ink hover:text-white"
 
   if (!variantId) {

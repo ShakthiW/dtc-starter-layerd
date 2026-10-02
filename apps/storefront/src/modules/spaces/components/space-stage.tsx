@@ -10,7 +10,7 @@ import {
 } from "react"
 
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
-import { Act, Box, Space } from "../types"
+import { Act, Box, SceneObject, Space } from "../types"
 import QuickAdd from "./quick-add"
 import { useKeyframeSnap } from "./use-keyframe-snap"
 
@@ -48,33 +48,110 @@ function subscribeMotion(callback: () => void) {
 const getReducedMotion = () =>
   window.matchMedia("(prefers-reduced-motion: reduce)").matches
 
-/** Where the camera sits for one act, for the current stage size. */
-function cameraFor(act: Act, aspect: number, vw: number, vh: number) {
-  const layerW = vh * aspect
-  const wide = vw / vh >= 1.15
-  const contain = Math.min(vw / layerW, 1)
+type Rect = { left: number; top: number; right: number; bottom: number }
+
+/** Some of an act's products, padded, as one box on the plate. */
+function focusBox(act: Act, objects: SceneObject[], handles = act.products): Box {
+  const boxes = handles
+    .map((handle) => objects.find((o) => o.handle === handle)?.box)
+    .filter((b): b is Box => Boolean(b))
+  if (!boxes.length) return act.frame
+  const x0 = Math.min(...boxes.map((b) => b.x))
+  const y0 = Math.min(...boxes.map((b) => b.y))
+  const x1 = Math.max(...boxes.map((b) => b.x + b.w))
+  const y1 = Math.max(...boxes.map((b) => b.y + b.h))
+  const padX = (x1 - x0) * 0.12 + 0.01
+  const padY = (y1 - y0) * 0.1 + 0.012
+  const left = Math.max(0, x0 - padX)
+  const top = Math.max(0, y0 - padY)
+  return { x: left, y: top, w: Math.min(1, x1 + padX) - left, h: Math.min(1, y1 + padY) - top }
+}
+
+/**
+ * Where the camera sits for one act, for the current stage size.
+ *
+ * Product acts fit their products into the stage's free area: whatever the
+ * act's label doesn't cover (a panel at the side on large screens, a sheet at
+ * the bottom on small ones). The label is measured, not assumed, so this
+ * holds at every window size. Other acts frame their set region.
+ */
+function cameraFor(
+  act: Act,
+  plate: { width: number; height: number },
+  objects: SceneObject[],
+  vw: number,
+  vh: number,
+  label?: Rect
+) {
+  const layerW = (vh * plate.width) / plate.height
   const cover = Math.max(vw / layerW, 1)
-  const focus = act.layout === "focus"
-  // Desktop frames the object on the left and keeps the right for the label;
-  // phones frame it in the upper half above the bottom sheet.
-  const room = focus
-    ? wide
-      ? { w: vw * 0.5, h: vh * 0.66, ax: 0.34, ay: 0.5 }
-      : { w: vw * 0.86, h: vh * 0.42, ax: 0.5, ay: 0.33 }
-    : { w: vw, h: vh, ax: 0.5, ay: 0.5 }
-  const frame = !wide && act.phoneFrame ? act.phoneFrame : act.frame
-  let scale = Math.min(room.w / (frame.w * layerW), room.h / (frame.h * vh))
-  // On phones the photograph is already as tall as the screen, so a focus act
-  // zooms further to have room to lift the object above the label sheet.
-  const floor =
-    act.fit === "contain" && wide
-      ? contain
-      : focus && !wide
-      ? cover * 1.7
-      : cover
-  scale = Math.max(scale, floor)
-  const c = centre(frame)
-  return { scale, cx: c.x, cy: c.y, ax: room.ax, ay: room.ay }
+  const wide = vw / vh >= 1.15
+
+  if (act.layout !== "focus") {
+    const frame = !wide && act.phoneFrame ? act.phoneFrame : act.frame
+    const fit = Math.min(vw / (frame.w * layerW), vh / (frame.h * vh))
+    const floor = act.fit === "contain" && wide ? Math.min(vw / layerW, 1) : cover
+    const c = centre(frame)
+    return {
+      scale: Math.max(fit, floor),
+      cx: c.x,
+      cy: c.y,
+      ax: 0.5,
+      ay: 0.5,
+      box: frame,
+      framed: [] as string[],
+      floor: vh,
+    }
+  }
+
+  // The free area: the stage minus the label and a margin
+  const safe = { left: vw * 0.05, top: vh * 0.1, right: vw * 0.95, bottom: vh * 0.92 }
+  // The photograph may end just behind an opaque bottom sheet: nothing shows
+  // below the sheet's top edge, so products low in the photo can still be
+  // lifted into view without zooming in further
+  let floor = vh
+  if (label) {
+    if (label.left > vw * 0.4) safe.right = Math.min(safe.right, label.left - 32)
+    else if (label.top > vh * 0.25) {
+      safe.bottom = Math.min(safe.bottom, label.top - 16)
+      floor = label.top + 24
+    }
+  }
+  const fitOf = (b: Box) =>
+    Math.min((safe.right - safe.left) / (b.w * layerW), (safe.bottom - safe.top) / (b.h * vh))
+  // Frame the lead product, then any others that still fit without zooming
+  // out past the photograph (far-apart products can't all fit on a narrow
+  // screen; the label still lists every one)
+  let framed = act.products.slice(0, 1)
+  for (const handle of act.products.slice(1)) {
+    const trial = [...framed, handle]
+    if (fitOf(focusBox(act, objects, trial)) >= cover) framed = trial
+  }
+  const box = focusBox(act, objects, framed)
+  const fit = fitOf(box)
+  // Products near a plate edge need extra zoom before the camera can bring
+  // them into the free area without showing past the photograph's edge
+  const reach = Math.max(
+    box.y > 0 ? safe.top / (box.y * vh) : 0,
+    box.y + box.h < 1 ? (floor - safe.bottom) / ((1 - box.y - box.h) * vh) : 0,
+    box.x > 0 ? safe.left / (box.x * layerW) : 0,
+    box.x + box.w < 1 ? (vw - safe.right) / ((1 - box.x - box.w) * layerW) : 0
+  )
+  let scale = Math.max(cover, fit)
+  if (reach > scale) scale = Math.min(reach, scale * 1.6)
+  // No closer than the photograph stays sharp (about 1.25 screen px per plate px)
+  scale = Math.min(scale, Math.max(cover, (plate.width / layerW) * 1.25))
+  const c = centre(box)
+  return {
+    scale,
+    cx: c.x,
+    cy: c.y,
+    ax: (safe.left + safe.right) / 2 / vw,
+    ay: (safe.top + safe.bottom) / 2 / vh,
+    box,
+    framed,
+    floor,
+  }
 }
 
 /** The plate an act ends on, once its light has finished changing. */
@@ -147,6 +224,9 @@ export default function SpaceStage({
   const hotspots = useRef<Record<string, HTMLAnchorElement | null>>({})
   const leaderRef = useRef<SVGLineElement>(null)
   const activeRef = useRef(0)
+  // Each act's label (panel or sheet), measured against the stage
+  const copies = useRef<(HTMLDivElement | null)[]>([])
+  const labels = useRef<(Rect | undefined)[]>([])
 
   // Frame locks: document scroll positions of every keyframe, with the act
   // each belongs to, plus the hand-off to the shop grid below.
@@ -272,8 +352,15 @@ export default function SpaceStage({
       // Camera: interpolate the framed point and the zoom (in log space so
       // pushing in and pulling back feel equally paced), then keep the
       // photograph covering the stage wherever it is larger than it.
-      const ca = cameraFor(a, aspect, vw, vh)
-      const cb = cameraFor(b, aspect, vw, vh)
+      const ca = cameraFor(a, space.plate, objects, vw, vh, labels.current[current])
+      const cb = cameraFor(
+        b,
+        space.plate,
+        objects,
+        vw,
+        vh,
+        labels.current[Math.min(current + 1, acts.length - 1)]
+      )
       const scale = Math.exp(mix(Math.log(ca.scale), Math.log(cb.scale), t))
       const fx = mix(ca.cx, cb.cx, t)
       const fy = mix(ca.cy, cb.cy, t)
@@ -282,7 +369,8 @@ export default function SpaceStage({
       let tx = mix(ca.ax, cb.ax, t) * vw - fx * w
       let ty = mix(ca.ay, cb.ay, t) * vh - fy * h
       tx = w >= vw ? clamp(tx, vw - w, 0) : (vw - w) / 2
-      ty = h >= vh ? clamp(ty, vh - h, 0) : (vh - h) / 2
+      const floor = mix(ca.floor, cb.floor, t)
+      ty = h >= floor ? clamp(ty, floor - h, 0) : (floor - h) / 2
       camera.style.transform = `translate3d(${tx}px, ${ty}px, 0) scale(${scale})`
 
       // Turn: the camera's attitude, eased between acts. Perspective on the
@@ -331,11 +419,13 @@ export default function SpaceStage({
         b.layout === "focus" ? 1 : 0,
         t
       )
+      const sa = ca.box
+      const sb = cb.box
       const fb = {
-        x: mix(a.frame.x, b.frame.x, t),
-        y: mix(a.frame.y, b.frame.y, t),
-        w: mix(a.frame.w, b.frame.w, t),
-        h: mix(a.frame.h, b.frame.h, t),
+        x: mix(sa.x, sb.x, t),
+        y: mix(sa.y, sb.y, t),
+        w: mix(sa.w, sb.w, t),
+        h: mix(sa.h, sb.h, t),
       }
       const focusMask = `radial-gradient(ellipse ${fb.w * 62}% ${
         fb.h * 66
@@ -366,23 +456,29 @@ export default function SpaceStage({
         el.tabIndex = settled ? 0 : -1
       }
 
-      // A hairline from the framed objects to their label, desktop only.
+      // A hairline from the framed objects to their side panel
       const line = leaderRef.current
       if (line) {
-        const show = focus > 0.98 && vw / vh >= 1.15
+        // Only beside a side panel (as measured), never over a bottom sheet
+        const label = labels.current[current]
+        const framed = (a.layout === "focus" ? ca : cb).framed
+        const show = focus > 0.98 && !!label && label.left > vw * 0.4 && framed.length > 0
         line.style.opacity = show ? "1" : "0"
         if (show) {
-          // From the right-most featured product, so it never crosses the others
-          const lead = (a.products.length ? a : b).products
+          // From the right-most framed product, so it never crosses the others
+          const lead = framed
             .map(box)
             .reduce((best, x) => (x.x + x.w > best.x + best.w ? x : best))
-          const panelLeft = vw - vw * 0.06 - Math.min(480, vw * 0.32)
           line.setAttribute("x1", String(tx + (lead.x + lead.w) * w + 12))
           line.setAttribute("y1", String(ty + (lead.y + lead.h * 0.3) * h))
-          line.setAttribute("x2", String(panelLeft - 24))
-          line.setAttribute("y2", String(vh * 0.5 - 60))
+          line.setAttribute("x2", String(label.left - 24))
+          line.setAttribute("y2", String(label.top + 32))
         }
       }
+
+      // Which products are in shot, for tests and debugging
+      const inShot = moving > 0 ? "" : ca.framed.join(",")
+      if (stage.dataset.framed !== inShot) stage.dataset.framed = inShot
 
       // Copy on a dark plate waits until the light has actually changed: the
       // fade, or the reveal's fill when there is no fade.
@@ -405,6 +501,28 @@ export default function SpaceStage({
     const request = () => {
       if (visible && !frame) frame = requestAnimationFrame(render)
     }
+
+    // Labels move with the breakpoint and wrap with the copy, so re-measure
+    // whenever the stage or any label changes size, and once fonts load
+    const measure = () => {
+      const box = stage.getBoundingClientRect()
+      labels.current = copies.current.map((el) => {
+        if (!el) return undefined
+        const r = el.getBoundingClientRect()
+        return {
+          left: r.left - box.left,
+          top: r.top - box.top,
+          right: r.right - box.left,
+          bottom: r.bottom - box.top,
+        }
+      })
+      request()
+    }
+    const sizes = new ResizeObserver(measure)
+    sizes.observe(stage)
+    copies.current.forEach((el) => el && sizes.observe(el))
+    document.fonts?.ready.then(measure)
+    measure()
     const observer = new IntersectionObserver(([entry]) => {
       visible = entry.isIntersecting
       request()
@@ -416,6 +534,7 @@ export default function SpaceStage({
     return () => {
       cancelAnimationFrame(frame)
       observer.disconnect()
+      sizes.disconnect()
       window.removeEventListener("scroll", request)
       window.removeEventListener("resize", request)
     }
@@ -519,6 +638,7 @@ export default function SpaceStage({
             <LocalizedClientLink
               key={o.handle}
               href={`/products/${o.handle}`}
+              data-box={`${o.box.x},${o.box.y},${o.box.w},${o.box.h}`}
               ref={(el: HTMLAnchorElement | null) => {
                 hotspots.current[o.handle] = el
               }}
@@ -559,6 +679,9 @@ export default function SpaceStage({
           activeIndex={active}
           products={products}
           reduced={reduced}
+          copyRef={(index, el) => {
+            copies.current[index] = el
+          }}
         />
       </div>
 
@@ -586,11 +709,13 @@ function ActCopy({
   activeIndex,
   products,
   reduced,
+  copyRef,
 }: {
   acts: Act[]
   activeIndex: number
   products: Record<string, SpaceProduct>
   reduced: boolean
+  copyRef: (index: number, el: HTMLDivElement | null) => void
 }) {
   if (reduced) return null
   const current = acts[activeIndex]
@@ -599,7 +724,7 @@ function ActCopy({
       {/* A soft wash behind the desktop label, so it never sits on a busy wall */}
       <div
         aria-hidden
-        className={`absolute inset-y-0 right-0 hidden w-[50vw] transition-opacity duration-500 small:block ${
+        className={`absolute inset-y-0 right-0 hidden w-[50vw] transition-opacity duration-500 panel:block ${
           current?.tone === "dark"
             ? "bg-gradient-to-l from-ink/60 via-ink/30 to-transparent"
             : "bg-gradient-to-l from-paper/85 via-paper/55 to-transparent"
@@ -616,7 +741,7 @@ function ActCopy({
             : "inset-x-0 top-[9%] px-6 text-center items-center",
           end: "inset-x-0 bottom-[9%] px-6 text-center items-center",
           focus:
-            "inset-x-3 bottom-3 rounded-large bg-surface/95 p-5 backdrop-blur small:inset-x-auto small:bottom-auto small:right-[6%] small:top-1/2 small:w-[min(30rem,32vw)] small:-translate-y-1/2 small:bg-transparent small:p-0 small:backdrop-blur-0",
+            "inset-x-0 bottom-0 max-h-[70%] overflow-y-auto rounded-t-large bg-surface p-4 pb-[max(1rem,env(safe-area-inset-bottom))] panel:max-h-[calc(100%-2rem)] panel:rounded-none panel:inset-x-auto panel:bottom-auto panel:right-[6%] panel:top-1/2 panel:w-[min(30rem,32vw)] panel:-translate-y-1/2 panel:bg-transparent panel:p-0 panel:backdrop-blur-0",
           caption: right
             ? "left-[6%] right-[6%] top-[10%] items-end text-right small:left-auto small:max-w-xl"
             : "left-[6%] right-[6%] bottom-[12%] max-w-xl",
@@ -625,17 +750,20 @@ function ActCopy({
           dark && !focus
             ? "text-white"
             : dark
-            ? "text-ink small:text-white"
+            ? "text-ink panel:text-white"
             : "text-ink"
         const copy =
           dark && !focus
             ? "text-white/80"
             : dark
-            ? "text-muted small:text-white/80"
+            ? "text-muted panel:text-white/80"
             : "text-muted"
         return (
           <div
             key={a.id}
+            ref={(el) => copyRef(index, el)}
+            data-act={a.id}
+            data-layout={a.layout}
             aria-hidden={!shown}
             className={`absolute flex flex-col gap-3 transition-[opacity,transform] duration-500 ease-out ${place} ${
               shown ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"
@@ -710,11 +838,11 @@ function ProductList({
   tone: "light" | "dark"
 }) {
   if (!handles.length) return null
-  const ink = tone === "dark" ? "text-ink small:text-white" : "text-ink"
+  const ink = tone === "dark" ? "text-ink panel:text-white" : "text-ink"
   const muted =
-    tone === "dark" ? "text-muted small:text-white/70" : "text-muted"
+    tone === "dark" ? "text-muted panel:text-white/70" : "text-muted"
   const rule =
-    tone === "dark" ? "border-line small:border-white/25" : "border-line"
+    tone === "dark" ? "border-line panel:border-white/25" : "border-line"
   return (
     <ul className={`mt-2 border-t ${rule}`}>
       {handles.map((handle) => {
@@ -723,7 +851,7 @@ function ProductList({
         return (
           <li
             key={handle}
-            className={`flex items-center justify-between gap-4 border-b py-3 ${rule}`}
+            className={`flex items-center justify-between gap-4 border-b py-1.5 panel:py-3 ${rule}`}
           >
             <LocalizedClientLink
               href={`/products/${handle}`}

@@ -68,6 +68,11 @@ module.exports = {
         large: "1440px",
         xlarge: "1680px",
         "2xlarge": "1920px",
+        // Room-tour labels sit beside the scene on landscape screens (they
+        // scroll if the screen is short); otherwise they're a bottom sheet
+        panel: {
+          raw: "(min-width: 640px) and (min-aspect-ratio: 23/20)",
+        },
       },
       fontSize: {
         "3xl": "2rem",
