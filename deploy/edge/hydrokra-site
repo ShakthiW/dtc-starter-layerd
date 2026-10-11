@@ -51,6 +51,49 @@ bridge_up() { # the standord route must answer (403 without credentials, as befo
   [ "$code" != 000 ]
 }
 
+# Every name a container on network $1 answers to (service names, container names, aliases).
+aliases_on() {
+  for c in $(docker network inspect "$1" -f '{{range .Containers}}{{.Name}} {{end}}' 2>/dev/null); do
+    docker inspect "$c" -f "{{with index .NetworkSettings.Networks \"$1\"}}{{range .Aliases}}{{.}}{{println}}{{end}}{{end}}" 2>/dev/null
+  done | grep -vE '^[0-9a-f]{12}$' | sort -u
+}
+
+# Joining $NET must not make any name Caddy already resolves (layerd's `storefront`, `backend`,
+# standord's names...) point at a second container: Docker DNS would answer with both, and
+# traffic for another site lands on this one. This is what showed HYDROKRA on layerd.lk.
+no_alias_clash() {
+  mine=$(aliases_on "$NET")
+  [ -n "$mine" ] || return 0
+  theirs=""
+  for n in $(docker inspect "$CT" -f '{{range $k, $v := .NetworkSettings.Networks}}{{$k}} {{end}}'); do
+    [ "$n" = "$NET" ] && continue
+    theirs="$theirs
+$(aliases_on "$n")"
+  done
+  clash=""
+  for name in $mine; do
+    printf '%s\n' "$theirs" | grep -qxF "$name" && clash="$clash $name"
+  done
+  if [ -n "$clash" ]; then
+    echo "hydrokra-site: refusing to join $NET: these names would also resolve to its containers:" >&2
+    printf '  %s\n' $clash >&2
+    echo "  Rename those services in the HYDROKRA compose file (hk-backend, hk-storefront), then retry." >&2
+    return 1
+  fi
+}
+
+# After joining: every name Caddy resolved before must still give exactly one address.
+names_unambiguous() {
+  for n in $(docker inspect "$CT" -f '{{range $k, $v := .NetworkSettings.Networks}}{{$k}} {{end}}'); do
+    [ "$n" = "$NET" ] && continue
+    aliases_on "$n"
+  done | sort -u | while read -r name; do
+    [ -n "$name" ] || continue
+    count=$(docker exec "$CT" getent ahostsv4 "$name" 2>/dev/null | awk '{print $1}' | sort -u | wc -l)
+    [ "$count" -le 1 ] || { echo "$name"; }
+  done
+}
+
 preflight() {
   say "Is the live config exactly standord's mirror?"
   live_matches_mirror || die "the live config differs from $MIRROR (someone changed it without updating the mirror). Stop: reconcile first, as the operator notes say."
@@ -77,6 +120,7 @@ case "${1:-}" in
     preflight
     docker network inspect "$NET" >/dev/null 2>&1 && echo "network $NET exists" || echo "network $NET does not exist yet"
     connected && echo "$CT is on $NET" || echo "$CT is not on $NET"
+    if no_alias_clash; then echo "no name clashes between $NET and Caddy's other networks"; fi
     has_line && echo "the mirror imports HYDROKRA" || echo "the mirror doesn't import HYDROKRA"
     [ -f "$SRC" ] && echo "site file ready: $SRC" || echo "site file missing: $SRC"
     ;;
@@ -88,6 +132,9 @@ case "${1:-}" in
     backup
     say "Network, site file and import line"
     docker network inspect "$NET" >/dev/null 2>&1 || docker network create "$NET" >/dev/null
+    if ! connected; then
+      no_alias_clash || die "nothing changed on the network or in the config"
+    fi
     connected || docker network connect "$NET" "$CT"
     install -d -m 755 "$SITE_DIR"
     [ -f "$SITE" ] && cp -p "$SITE" "$SITE.bak"
@@ -99,7 +146,10 @@ case "${1:-}" in
       restore "$STAMP"; if [ -f "$SITE.bak" ]; then mv "$SITE.bak" "$SITE"; else rm -rf "$SITE_DIR"; fi
       die "the new config doesn't validate; everything put back, live config untouched"
     fi
-    if ! reload || ! bridge_up; then
+    ambiguous=$(names_unambiguous)
+    if [ -n "$ambiguous" ] || ! reload || ! bridge_up; then
+      [ -z "$ambiguous" ] || echo "hydrokra-site: these names now resolve to several containers: $ambiguous" >&2
+      docker network disconnect "$NET" "$CT" 2>/dev/null || true
       restore "$STAMP"; if [ -f "$SITE.bak" ]; then mv "$SITE.bak" "$SITE"; else rm -rf "$SITE_DIR"; fi
       reload || true
       die "reload or the standord route check failed; rolled back and reloaded the previous mirror"
