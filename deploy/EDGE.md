@@ -34,6 +34,28 @@ One Caddy (`layerd-caddy-1`, the `caddy` service in this repo's
 - **holaa / openwa** (`/root/hotel-chatbot`) are separate. layerd's backend only
   joins `holaa_default` to reach its Postgres.
 
+## standord-bridge owns the live config
+
+What `layerd-caddy-1` serves is **standord-bridge's mirror**,
+`/config/standord-ingress/Caddyfile` (volume `layerd_caddy_config`). The container's
+`/etc/caddy/Caddyfile` is a stale bind mount: **never reload from it**, or the
+standord route disappears (this happened once, for 2.5 minutes). Any change to the
+live config means: confirm the live config equals the mirror, edit the mirror (and
+keep `/opt/layerd/Caddyfile` identical), validate, reload from the mirror.
+
+Until standord's owner agrees to a new layout, the `cutover.sh` / `caddy-site` flow
+below is **on hold** (`cutover.sh` refuses to run without `STANDORD_OK=1`). In the
+meantime HYDROKRA is added with `deploy/edge/hydrokra-site`, which follows the rule
+above, makes one change (an `import /config/hydrokra/*.caddy` line, plus joining the
+`edge-hydrokra` network) and can take it out again:
+
+```sh
+sh /opt/layerd/app/deploy/edge/hydrokra-site check     # read-only
+sh /opt/layerd/app/deploy/edge/hydrokra-site add
+sh /opt/layerd/app/deploy/edge/hydrokra-site refresh   # after HYDROKRA's ship.sh --files-only
+sh /opt/layerd/app/deploy/edge/hydrokra-site remove    # then: docker compose down -v in /opt/hydrokra
+```
+
 ## caddy-site
 
 `/usr/local/bin/caddy-site` (from `deploy/edge/caddy-site`) manages the site files.

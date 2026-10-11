@@ -1,0 +1,135 @@
+#!/bin/sh
+# hydrokra-site: plug HYDROKRA into the droplet's running Caddy (layerd-caddy-1)
+# the way standord-bridge's operator notes allow, and unplug it again.
+#
+# The live Caddy config is standord-bridge's mirror, /config/standord-ingress/Caddyfile
+# (volume layerd_caddy_config). /etc/caddy/Caddyfile in the container is a stale
+# bind mount and must NEVER be reloaded. So every reload here comes from the mirror,
+# and only after the mirror is proven identical to what is live.
+#
+#   hydrokra-site check      read-only: preconditions + "live config == mirror"
+#   hydrokra-site add        connect Caddy to edge-hydrokra, install the site, add one
+#                            import line to the mirror (and /opt/layerd/Caddyfile), reload
+#   hydrokra-site refresh    after HYDROKRA's deploy/ship.sh --files-only re-rendered the
+#                            site (new password, new domain): install it and reload
+#   hydrokra-site remove     take everything out again (import line, site file, network)
+#
+# Needs: root on the droplet; /opt/hydrokra/caddy/hydrokra.rendered.caddy for add/refresh.
+# Nothing is restarted. If a step fails after files changed, they are put back.
+set -eu
+
+CT=layerd-caddy-1
+NET=edge-hydrokra
+V=/var/lib/docker/volumes/layerd_caddy_config/_data
+MIRROR=$V/standord-ingress/Caddyfile
+MIRROR_IN=/config/standord-ingress/Caddyfile
+ROOTCF=/opt/layerd/Caddyfile
+SITE_DIR=$V/hydrokra
+SITE=$SITE_DIR/hydrokra.caddy
+SRC=${HYDROKRA_SITE_SRC:-/opt/hydrokra/caddy/hydrokra.rendered.caddy}
+LINE='import /config/hydrokra/*.caddy'
+STAMP=$(date +%Y%m%d-%H%M%S)
+
+say() { printf '== %s\n' "$*"; }
+die() { printf 'hydrokra-site: %s\n' "$*" >&2; exit 1; }
+
+[ "$(id -u)" = 0 ] || die "run as root"
+docker inspect -f '{{.State.Running}}' "$CT" 2>/dev/null | grep -q true || die "$CT isn't running"
+[ -f "$MIRROR" ] || die "standord's mirror is missing ($MIRROR); stop and check standord-bridge"
+[ -f "$V/caddy/autosave.json" ] || die "Caddy's autosave.json is missing"
+
+live_matches_mirror() {
+  docker exec "$CT" caddy adapt --config "$MIRROR_IN" --adapter caddyfile 2>/dev/null |
+    python3 -c 'import json,sys; sys.exit(0 if json.load(sys.stdin)==json.load(open(sys.argv[1])) else 1)' "$V/caddy/autosave.json"
+}
+validate() { docker exec "$CT" caddy validate --config "$MIRROR_IN" --adapter caddyfile >/dev/null 2>&1; }
+reload() { docker exec "$CT" caddy reload --config "$MIRROR_IN" --adapter caddyfile >/dev/null 2>&1; }
+has_line() { grep -qxF "$LINE" "$MIRROR"; }
+connected() { docker inspect -f '{{json .NetworkSettings.Networks}}' "$CT" | grep -q "\"$NET\""; }
+bridge_up() { # the standord route must answer (403 without credentials, as before)
+  code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 --resolve bridge-api.168-144-116-90.sslip.io:443:127.0.0.1 https://bridge-api.168-144-116-90.sslip.io/ || true)
+  [ "$code" != 000 ]
+}
+
+preflight() {
+  say "Is the live config exactly standord's mirror?"
+  live_matches_mirror || die "the live config differs from $MIRROR (someone changed it without updating the mirror). Stop: reconcile first, as the operator notes say."
+  if [ -f "$ROOTCF" ] && ! cmp -s "$ROOTCF" "$MIRROR"; then
+    die "$ROOTCF differs from the mirror; reconcile them first"
+  fi
+  echo "  yes (and $ROOTCF is identical)"
+}
+
+restore() { # $1 = backup stamp
+  cat "$MIRROR.pre-hydrokra-$1" > "$MIRROR"
+  [ -f "$ROOTCF.pre-hydrokra-$1" ] && cat "$ROOTCF.pre-hydrokra-$1" > "$ROOTCF"
+  return 0
+}
+backup() {
+  cp -p "$MIRROR" "$MIRROR.pre-hydrokra-$STAMP"
+  [ -f "$ROOTCF" ] && cp -p "$ROOTCF" "$ROOTCF.pre-hydrokra-$STAMP"
+  return 0
+}
+sync_root() { [ -f "$ROOTCF" ] && cat "$MIRROR" > "$ROOTCF"; return 0; }  # in place: keeps its inode
+
+case "${1:-}" in
+  check)
+    preflight
+    docker network inspect "$NET" >/dev/null 2>&1 && echo "network $NET exists" || echo "network $NET does not exist yet"
+    connected && echo "$CT is on $NET" || echo "$CT is not on $NET"
+    has_line && echo "the mirror imports HYDROKRA" || echo "the mirror doesn't import HYDROKRA"
+    [ -f "$SRC" ] && echo "site file ready: $SRC" || echo "site file missing: $SRC"
+    ;;
+
+  add | refresh)
+    [ -f "$SRC" ] || die "$SRC not found: run HYDROKRA's deploy/ship.sh --files-only first"
+    if [ "$1" = refresh ]; then has_line || die "HYDROKRA isn't added yet: run 'hydrokra-site add'"; fi
+    preflight
+    backup
+    say "Network, site file and import line"
+    docker network inspect "$NET" >/dev/null 2>&1 || docker network create "$NET" >/dev/null
+    connected || docker network connect "$NET" "$CT"
+    install -d -m 755 "$SITE_DIR"
+    [ -f "$SITE" ] && cp -p "$SITE" "$SITE.bak"
+    install -m 644 "$SRC" "$SITE"
+    if ! has_line; then printf '\n# HYDROKRA client preview (hydrokra-site; remove with: hydrokra-site remove)\n%s\n' "$LINE" >> "$MIRROR"; fi
+    sync_root
+    say "Validate, then reload from the mirror"
+    if ! validate; then
+      restore "$STAMP"; if [ -f "$SITE.bak" ]; then mv "$SITE.bak" "$SITE"; else rm -rf "$SITE_DIR"; fi
+      die "the new config doesn't validate; everything put back, live config untouched"
+    fi
+    if ! reload || ! bridge_up; then
+      restore "$STAMP"; if [ -f "$SITE.bak" ]; then mv "$SITE.bak" "$SITE"; else rm -rf "$SITE_DIR"; fi
+      reload || true
+      die "reload or the standord route check failed; rolled back and reloaded the previous mirror"
+    fi
+    rm -f "$SITE.bak"
+    echo "  done. Backups: $MIRROR.pre-hydrokra-$STAMP (and $ROOTCF.pre-hydrokra-$STAMP)"
+    echo "  Update standord's baselines: $CT is now also on $NET and imports /config/hydrokra/*.caddy"
+    ;;
+
+  remove)
+    preflight_ok=0
+    live_matches_mirror && preflight_ok=1
+    [ "$preflight_ok" = 1 ] || die "the live config differs from the mirror; reconcile first"
+    backup
+    say "Taking HYDROKRA out"
+    grep -vxF -e "$LINE" -e '# HYDROKRA client preview (hydrokra-site; remove with: hydrokra-site remove)' "$MIRROR" > "$MIRROR.new" || true
+    cat "$MIRROR.new" > "$MIRROR"; rm -f "$MIRROR.new"
+    sync_root
+    if ! validate || ! reload || ! bridge_up; then
+      restore "$STAMP"; reload || true
+      die "removal failed; put back as it was"
+    fi
+    rm -rf "$SITE_DIR"
+    if connected; then docker network disconnect "$NET" "$CT"; fi
+    echo "  done: the mirror no longer imports HYDROKRA, $CT left $NET."
+    echo "  Now: cd /opt/hydrokra && docker compose down -v ; docker network rm $NET"
+    ;;
+
+  *)
+    sed -n '2,19p' "$0" | sed 's/^# \{0,1\}//'
+    exit 1
+    ;;
+esac

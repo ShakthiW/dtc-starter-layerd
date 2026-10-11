@@ -19,6 +19,11 @@
 # Nothing in holaa, openwa or standord-bridge is changed. Safe to re-run.
 set -eu
 
+# ON HOLD: this recreates layerd-caddy-1 and replaces its Caddyfile, but the live config
+# is standord-bridge's mirror (see EDGE.md, "standord-bridge owns the live config").
+# Run it only after standord's owner agreed: STANDORD_OK=1 sh cutover.sh
+[ "${STANDORD_OK:-}" = 1 ] || { echo "cutover: on hold, read the note at the top of this file" >&2; exit 1; }
+
 LAYERD=/opt/layerd
 SRC=$LAYERD/app/deploy
 NEET=/opt/dtc-starter-neet/deploy
