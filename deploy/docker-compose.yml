@@ -1,8 +1,17 @@
 # LAYERD production stack on the droplet. Lives in /opt/layerd, with the
-# repo cloned at /opt/layerd/app. Only Caddy is published (80/443).
+# repo cloned at /opt/layerd/app (deploy files copied up from app/deploy).
+#
+# Images are built in GitHub Actions (or locally with deploy/ship.sh) and only
+# pulled or loaded here: nothing is built on the droplet.
 #
 # The database is the droplet's existing Postgres (holaa-postgres-1), with
 # its own `layerd` database and role; the backend joins that network.
+#
+# This stack's Caddy is also the droplet's SHARED edge proxy (see EDGE.md):
+# it serves layerd, neet and hydrokra on 80/443 (+8443 for neet behind
+# Cloudflare), and the standord-bridge ingress. Keep the project name, the
+# service name and the caddy_* volumes: standord-bridge is wired to the
+# layerd-caddy-1 container and the layerd_caddy_config volume.
 name: layerd
 
 services:
@@ -15,10 +24,8 @@ services:
     mem_limit: 128m
 
   backend:
-    build:
-      context: ./app
-      dockerfile: apps/backend/Dockerfile
-    image: layerd-backend:latest
+    image: ${BACKEND_IMAGE:-ghcr.io/shakthiw/layerd-backend:latest}
+    pull_policy: missing
     restart: unless-stopped
     env_file: backend.env
     depends_on:
@@ -37,13 +44,8 @@ services:
     mem_limit: 1200m
 
   storefront:
-    build:
-      context: ./app
-      dockerfile: apps/storefront/Dockerfile
-      args:
-        # Set in /opt/layerd/.env once the backend has created it
-        NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY: ${STOREFRONT_PUBLISHABLE_KEY:-}
-    image: layerd-storefront:latest
+    image: ${STOREFRONT_IMAGE:-ghcr.io/shakthiw/layerd-storefront:latest}
+    pull_policy: missing
     restart: unless-stopped
     environment:
       # Server-side calls stay on the private network
@@ -53,6 +55,9 @@ services:
         condition: service_healthy
     mem_limit: 640m
 
+  # Shared edge proxy for every app on the droplet. Sites for other projects are
+  # files in /opt/caddy-sites (installed with caddy-site), their certificates in
+  # /opt/caddy-certs. It reaches each project over that project's edge-* network.
   caddy:
     image: caddy:2-alpine
     restart: unless-stopped
@@ -60,18 +65,30 @@ services:
       - "80:80"
       - "443:443"
       - "443:443/udp"
+      # neet. behind Cloudflare (an Origin Rule sends its hostnames to 8443)
+      - "8443:8443"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - /opt/caddy-sites:/etc/caddy/sites:ro
+      - /opt/caddy-certs:/certs:ro
       - caddy_data:/data
       - caddy_config:/config
-    depends_on:
-      - storefront
-      - backend
-    mem_limit: 128m
+    networks:
+      - default
+      - edge-neet
+      - edge-hydrokra
+    mem_limit: 160m
 
 networks:
   holaa:
     name: holaa_default
+    external: true
+  # one network per project, created once by deploy/edge/cutover.sh
+  edge-neet:
+    name: edge-neet
+    external: true
+  edge-hydrokra:
+    name: edge-hydrokra
     external: true
 
 volumes:

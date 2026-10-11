@@ -1,0 +1,93 @@
+# Builds the LAYERD backend and storefront images and pushes them to GitHub's
+# container registry (ghcr.io). The droplet only pulls them; nothing builds there.
+#
+# Repository settings > Secrets and variables > Actions:
+#   Variables  NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY  (public; it ships in the browser bundle)
+#              DEPLOY_ENABLED                  "true" to deploy after building
+#              DROPLET_HOST                    168.144.116.90
+#   Secrets    DROPLET_SSH_KEY                 private key allowed to SSH in as root
+#              DROPLET_KNOWN_HOSTS             output of: ssh-keyscan 168.144.116.90
+name: Build images
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/images.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: images-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        app: [backend, storefront]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/layerd-${{ matrix.app }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,format=short
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/${{ matrix.app }}/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.app }}
+          cache-to: type=gha,scope=${{ matrix.app }},mode=max
+          # only the storefront uses it; the domains are defaults in its Dockerfile
+          build-args: |
+            NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY=${{ vars.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY }}
+
+  deploy:
+    needs: build
+    if: vars.DEPLOY_ENABLED == 'true' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Pull and restart on the droplet
+        env:
+          SSH_KEY: ${{ secrets.DROPLET_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.DROPLET_KNOWN_HOSTS }}
+          HOST: ${{ vars.DROPLET_HOST }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_deploy && chmod 600 ~/.ssh/id_deploy
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          ssh -i ~/.ssh/id_deploy "root@$HOST" '
+            set -e
+            cd /opt/layerd
+            for app in backend storefront; do
+              img=ghcr.io/shakthiw/layerd-$app
+              docker image inspect $img:latest >/dev/null 2>&1 && docker tag $img:latest $img:previous || true
+            done
+            docker compose pull backend storefront
+            docker compose up -d --no-deps backend storefront
+            docker image prune -f >/dev/null
+          '

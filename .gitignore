@@ -57,3 +57,6 @@ Thumbs.db
 **/.DS_Store
 
 scrollcraft/
+
+# Build-time values for deploy/ship.sh (kept on your computer)
+deploy/build.env

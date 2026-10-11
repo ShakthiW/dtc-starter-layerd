@@ -1,0 +1,46 @@
+#!/bin/sh
+# caddy-site: manage one project's site file in the droplet's shared Caddy
+# (layerd-caddy-1, see EDGE.md). Installed to /usr/local/bin by cutover.sh.
+#
+#   caddy-site install <name> <file>   copy to /opt/caddy-sites/<name>.caddy, validate
+#                                      the whole config, reload; roll back if invalid
+#   caddy-site remove <name>           remove a site and reload
+#   caddy-site list                    installed sites
+#   caddy-site reload                  validate and reload as is
+set -eu
+SITES=/opt/caddy-sites
+CADDY="${CADDY_CONTAINER:-layerd-caddy-1}"
+CONF=/etc/caddy/Caddyfile
+
+validate() { docker exec "$CADDY" caddy validate --config "$CONF" --adapter caddyfile 2>&1; }
+reload() { docker exec "$CADDY" caddy reload --config "$CONF" --adapter caddyfile; }
+
+case "${1:-}" in
+  install)
+    [ $# -eq 3 ] || { echo "usage: caddy-site install <name> <file>" >&2; exit 1; }
+    name=$2 src=$3 dst="$SITES/$2.caddy"
+    case "$name" in "" | *[!a-z0-9-]*) echo "caddy-site: name must be lowercase letters, digits, dashes" >&2; exit 1 ;; esac
+    [ -f "$src" ] || { echo "caddy-site: $src not found" >&2; exit 1; }
+    if [ -f "$dst" ]; then cp -p "$dst" "$dst.bak"; else rm -f "$dst.bak"; fi
+    cp "$src" "$dst" && chmod 644 "$dst"
+    if out=$(validate); then
+      reload
+      rm -f "$dst.bak"
+      echo "caddy-site: $name installed and reloaded"
+    else
+      echo "$out" >&2
+      if [ -f "$dst.bak" ]; then mv "$dst.bak" "$dst"; else rm -f "$dst"; fi
+      echo "caddy-site: the config didn't validate; $name rolled back, live config unchanged" >&2
+      exit 1
+    fi
+    ;;
+  remove)
+    [ $# -eq 2 ] || { echo "usage: caddy-site remove <name>" >&2; exit 1; }
+    rm -f "$SITES/$2.caddy"
+    validate >/dev/null && reload
+    echo "caddy-site: $2 removed"
+    ;;
+  list) ls -1 "$SITES" | grep '\.caddy$' || true ;;
+  reload) validate >/dev/null && reload && echo "caddy-site: reloaded" ;;
+  *) sed -n '2,10p' "$0" >&2; exit 1 ;;
+esac
