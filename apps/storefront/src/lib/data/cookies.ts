@@ -49,6 +49,17 @@ export const getCacheOptions = async (
   return { tags: [`${cacheTag}`] }
 }
 
+// Catalog data (products, prices, collections, categories, regions) is edited
+// in the admin, which can't invalidate this app's cache, so it expires instead
+const CATALOG_REVALIDATE_SECONDS = 30
+
+export const getCatalogCacheOptions = async (
+  tag: string
+): Promise<{ tags?: string[]; revalidate: number }> => ({
+  ...(await getCacheOptions(tag)),
+  revalidate: CATALOG_REVALIDATE_SECONDS,
+})
+
 // `sameSite: "lax"` rather than `"strict"`: the customer returns from a
 // redirect-based payment method (iDEAL, Bancontact, ...) via a cross-site
 // top-level navigation. A "strict" cookie is withheld on that navigation, so

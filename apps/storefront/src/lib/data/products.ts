@@ -2,7 +2,7 @@
 
 import { sdk } from "@lib/config"
 import { HttpTypes } from "@medusajs/types"
-import { getAuthHeaders, getCacheOptions } from "./cookies"
+import { getAuthHeaders, getCatalogCacheOptions } from "./cookies"
 import { getRegion, retrieveRegion } from "./regions"
 
 type ProductListQueryParams = (HttpTypes.FindParams &
@@ -54,7 +54,7 @@ export const listProducts = async ({
   }
 
   const next = {
-    ...(await getCacheOptions("products")),
+    ...(await getCatalogCacheOptions("products")),
   }
 
   return sdk.client
@@ -72,7 +72,6 @@ export const listProducts = async ({
         },
         headers,
         next,
-        cache: "force-cache",
       }
     )
     .then(({ products, count }) => {
