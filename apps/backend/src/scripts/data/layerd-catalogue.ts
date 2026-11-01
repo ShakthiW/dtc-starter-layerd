@@ -11,6 +11,8 @@ export type CatalogueProduct = {
   collection: string | null
   weight: number | null
   images: string[]
+  /** Created as a draft, hidden from the store, when set. */
+  draft?: boolean
   options: { title: string; values: string[] }[]
   variants: {
     title: string
@@ -130,6 +132,8 @@ export const catalogue: CatalogueProduct[] = [
   {
     "handle": "layerd-gift-card",
     "title": "LAYERD Gift Card",
+    // Medusa has no gift card redemption yet, so it isn't for sale
+    "draft": true,
     "description": "Why Choose the LAYERD Gift Card for Your Gifting Needs?\n\nGive them exactly what they want. The LAYERD Gift Card takes the guesswork out of gifting, allowing them to choose their perfect 3D-printed piece.\n\nFrom intricate, woven textures to sleek, geometric home accents, let them explore our collections and find the design that speaks to their aesthetic.\n\nHow it works:\nGift cards are delivered by email and contain a unique code to redeem at checkout. Our gift cards have no additional processing fees.\n\nFlexible and Convenient Gift Card Usage\n\nThe LAYERD gift card offers unmatched flexibility for both the giver and the receiver. This gift card can be used across a wide range of LAYERD products, allowing recipients to select exactly what they want. Whether shopping online or in-store, the LAYERD gift card provides an easy and convenient way to redeem without any hassle. It eliminates the guesswork often associated with gift giving, making it an ideal choice for busy individuals seeking the perfect present with minimal effort.\n\nIdeal for All Occasions and Recipients\n\nThis versatile gift card is perfect for birthdays, holidays, anniversaries, or any special event. The LAYERD gift card suits all ages and tastes, making it a thoughtful and practical gift option. Recipients appreciate the freedom to choose products that match their style and needs. Giving this gift card shows consideration and flexibility, helping you make a lasting impression on your loved ones with a simple, stylish gift solution.\n\nSimple to Purchase and Redeem with Secure Transactions\n\nPurchasing the LAYERD gift card is quick and straightforward, with secure payment options ensuring your privacy and safety. The gift card can be delivered instantly via email or as a physical card, allowing for last-minute gifts or planned surprises. Redemption processes are also streamlined, enabling users to apply their gift card balance effortlessly during checkout. Whether you buy it for yourself or as a gift, the LAYERD gift card enhances the shopping experience with trust and convenience.",
     "categories": [
       "gift-cards"

@@ -337,7 +337,7 @@ export async function setupLayerdStore(
           title: product.title,
           handle: product.handle,
           description: product.description,
-          status: ProductStatus.PUBLISHED,
+          status: product.draft ? ProductStatus.DRAFT : ProductStatus.PUBLISHED,
           weight: product.weight ?? undefined,
           material: "PLA",
           origin_country: "lk",
